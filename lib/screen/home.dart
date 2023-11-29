@@ -74,8 +74,8 @@ class _HomeScrnState extends State<HomeScrn> {
               SizedBox(
                 height: 315,
                 width: size.width,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
@@ -128,7 +128,10 @@ class _HomeScrnState extends State<HomeScrn> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const StudyMaterialScrn(),
+                        builder: (context) => StudyMaterialScrn(
+                          foldername: widget.userDetails!.email,
+                          email: widget.userDetails!.email,
+                        ),
                       ));
                 },
                 size: size,

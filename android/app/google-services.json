@@ -12,7 +12,20 @@
           "package_name": "com.example.eduvista"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "89300574377-q5slqrnrctp098fh0aan9bilb3rmavvc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.eduvista",
+            "certificate_hash": "53c2f660139188e89b454b07213b4999c61e9251"
+          }
+        },
+        {
+          "client_id": "89300574377-f43scjpb76sedsdkhrjgpgi2sqc2s49s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA7BYaQ0k762NwBlTG2T-aRWLKK7EFN1mg"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "89300574377-f43scjpb76sedsdkhrjgpgi2sqc2s49s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

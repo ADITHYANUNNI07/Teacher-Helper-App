@@ -1,4 +1,5 @@
 import 'package:eduvista/model/classmodel.dart';
+import 'package:eduvista/model/foldermodel.dart';
 import 'package:eduvista/model/questionsmodel.dart';
 import 'package:eduvista/model/studentattendance.dart';
 import 'package:eduvista/model/studentattendancemodel.dart';
@@ -18,12 +19,15 @@ Future<void> initalizeHiveandAdapter() async {
       AllStudentAttendanceModelAdapter());
   Hive.registerAdapter<StudentAttendenceModel>(StudentAttendenceModelAdapter());
   Hive.registerAdapter<Questionsmodel>(QuestionsmodelAdapter());
+  Hive.registerAdapter<FolderModel>(FolderModelAdapter());
+  Hive.registerAdapter<SubFolderModel>(SubFolderModelAdapter());
   // Open the Hive box
   await Hive.openBox<UserDetails>('userDB');
   await Hive.openBox<ClassModel>('classDB');
   await Hive.openBox<StudentModel>('studentDB');
   await Hive.openBox<AllStudentAttendanceModel>('studentattendanceDB');
   await Hive.openBox<Questionsmodel>('questionsDB');
+  await Hive.openBox<FolderModel>('FolderDB');
 }
 
 Future<void> addUserDetails(UserDetails user) async {
@@ -219,4 +223,47 @@ Future<void> updateQuestionsInHive(
     Questionsmodel updatedquestionmodel, int key) async {
   var box = await Hive.openBox<Questionsmodel>('questionsDB');
   await box.put(key, updatedquestionmodel);
+}
+
+Future<bool> addFoldertoHive(FolderModel folderModel) async {
+  final box = await Hive.openBox<FolderModel>('FolderDB');
+
+  try {
+    final index = await box.add(folderModel);
+    if (index >= 0) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
+}
+
+Future<List<FolderModel>> getFolderFromHive(String email) async {
+  final box = await Hive.openBox<FolderModel>('FolderDB');
+  final List<FolderModel> allfolderlist = box.values.toList();
+  List<FolderModel> eachfolderlist = [];
+  for (FolderModel folder in allfolderlist) {
+    print(folder.email);
+    if (folder.email == email) {
+      eachfolderlist.add(folder);
+    }
+  }
+  return eachfolderlist;
+}
+
+Future<void> updateFolderInHive(FolderModel updateFoldermodel, int key) async {
+  var box = await Hive.openBox<FolderModel>('FolderDB');
+  await box.put(key, updateFoldermodel);
+}
+
+Future<bool> deleteFolderFromHive(int key) async {
+  final box = await Hive.openBox<FolderModel>('FolderDB');
+  try {
+    await box.delete(key);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }

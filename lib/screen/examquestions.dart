@@ -31,7 +31,6 @@ ValueNotifier<List<Questionsmodel>> questionlistnotifer =
     ValueNotifier<List<Questionsmodel>>([]);
 
 class _PrepareExamQuestionsScrnState extends State<PrepareExamQuestionsScrn> {
-  @override
   void initState() {
     getQuestionsFN(widget.email);
     super.initState();
@@ -146,12 +145,13 @@ class _PrepareExamQuestionsScrnState extends State<PrepareExamQuestionsScrn> {
                             child: InkWell(
                               onTap: () {
                                 Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          DisplayExamQuestionScrn(
-                                              questionsmodel: questionmodel),
-                                    ));
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        DisplayExamQuestionScrn(
+                                            questionsmodel: questionmodel),
+                                  ),
+                                );
                               },
                               child: Container(
                                 width: size.width,

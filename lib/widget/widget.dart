@@ -1,6 +1,8 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
+import 'dart:io';
 
 class TextFormWidget extends StatelessWidget {
   const TextFormWidget({
@@ -302,4 +304,26 @@ class AddTextFeildWidget extends StatelessWidget {
       ],
     );
   }
+}
+
+Future<PickedPdf?> pickPdf() async {
+  FilePickerResult? result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['pdf'],
+  );
+
+  if (result != null) {
+    File pickedFile = File(result.files.single.path!);
+    String fileName = result.files.single.name;
+    return PickedPdf(pickedFile, fileName);
+  } else {
+    return null;
+  }
+}
+
+class PickedPdf {
+  final File file;
+  final String fileName;
+
+  PickedPdf(this.file, this.fileName);
 }
