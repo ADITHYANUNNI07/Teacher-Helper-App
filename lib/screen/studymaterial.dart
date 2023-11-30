@@ -15,6 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:awesome_snackbar_content/src/content_type.dart';
 import 'package:open_file/open_file.dart';
+import 'package:share/share.dart';
 
 class StudyMaterialScrn extends StatefulWidget {
   const StudyMaterialScrn(
@@ -289,6 +290,11 @@ class FutureBuilderclass extends StatefulWidget {
 
 class FutureBuilderclassState extends State<FutureBuilderclass> {
   late Future<List<FolderModel>> future;
+  GlobalKey<RefreshIndicatorState> refreshKey =
+      GlobalKey<RefreshIndicatorState>();
+  Future<List<FolderModel>> refreshTheFuture() async {
+    return getFolderFromHive(widget.email);
+  }
 
   @override
   void initState() {
@@ -300,166 +306,243 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
     future = getFolderFromHive(widget.email);
   }
 
-  void refreshthefuture(String email) {
-    future = getFolderFromHive(email);
+  Future<void> refreshthefuture() async {
+    future = getFolderFromHive(widget.email);
+    await Future.delayed(const Duration(seconds: 2));
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<FolderModel>>(
-      future: future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child:
-                LottieBuilder.asset('assets/animation/animation_lo4efsbq.json'),
-          );
-        } else if (snapshot.hasError) {
-          return Center(
-            child: LottieBuilder.asset('assets/animation/hkZtpfwq0R.json'),
-          );
-        } else {
-          FolderModel? mainfoldermodel;
-          List<FolderModel> foldermodellist = snapshot.data!;
-          List<SubFolderModel> newlist = [];
-          for (var element in foldermodellist) {
-            if (element.folderName == widget.foldername) {
-              mainfoldermodel = element;
-              for (var i in element.folderModel) {
-                newlist.add(i);
-              }
-            }
-          }
-          return newlist.isNotEmpty
-              ? Expanded(
-                  child: ListView.separated(
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 10),
-                    itemCount: newlist.length,
-                    itemBuilder: (context, index) {
-                      SubFolderModel subFolderModel = newlist[index];
-                      if (subFolderModel.name == 'image') {
-                        File imageFile = File(subFolderModel.path);
-
-                        if (imageFile.existsSync()) {
-                          return Image.file(imageFile);
-                        } else {
-                          return Text(
-                            'Image is not found',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(),
-                          );
-                        }
-                      } else if (subFolderModel.name == 'pdf') {
-                        return InkWell(
-                          onTap: () async {
-                            try {
-                              await OpenFile.open(subFolderModel.path);
-                            } catch (e) {
-                              print("Error opening file: $e");
-                            }
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: const Color(0Xff188F79),
-                                borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.all(20),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.picture_as_pdf,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  subFolderModel.pdfname!,
-                                  style:
-                                      GoogleFonts.poppins(color: Colors.white),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else if (subFolderModel.name == 'folder') {
-                        return InkWell(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => StudyMaterialScrn(
-                                      foldername: subFolderModel.path,
-                                      email: widget.email),
-                                ));
-                          },
-                          child: Slidable(
-                            endActionPane: ActionPane(
-                              motion: const StretchMotion(),
-                              children: [
-                                const SizedBox(width: 5),
-                                SlidableAction(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: Colors.blue.shade300,
-                                  label: 'Share',
-                                  icon: Icons.share,
-                                  spacing: 10,
-                                  borderRadius: BorderRadius.circular(9),
-                                  onPressed: (context) async {},
-                                ),
-                                const SizedBox(width: 5),
-                                SlidableAction(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: Colors.red.shade300,
-                                  label: 'Delete',
-                                  icon: Icons.delete,
-                                  spacing: 10,
-                                  borderRadius: BorderRadius.circular(9),
-                                  onPressed: (context) {
-                                    deleteFolder(
-                                        context,
-                                        subFolderModel.path,
-                                        index,
-                                        foldermodellist,
-                                        widget.email,
-                                        mainfoldermodel);
-                                  },
-                                )
-                              ],
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  color: const Color(0Xff188F79),
-                                  borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.only(
-                                  left: 20, top: 40, bottom: 40),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.folder,
-                                    size: 30,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    subFolderModel.path,
-                                    style: GoogleFonts.poppins(
-                                        fontSize: 20, color: Colors.white),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-                      return null;
-                    },
+    return Expanded(
+      child: RefreshIndicator(
+        key: refreshKey,
+        onRefresh: () async {
+          List<FolderModel> updatedData = await refreshTheFuture();
+          setState(() {
+            future = Future.value(updatedData);
+          });
+        },
+        child: FutureBuilder<List<FolderModel>>(
+          future: future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: LottieBuilder.asset(
+                    'assets/animation/animation_lo4efsbq.json'),
+              );
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Container(
+                  height: 100,
+                  width: 100,
+                  color: Colors.white,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.4,
+                    heightFactor: 0.4,
+                    child: Lottie.asset(
+                      'assets/animation/animation_lo4efsbq.json',
+                    ),
                   ),
-                )
-              : Center(
-                  child:
-                      LottieBuilder.asset('assets/animation/PUyQfE9kMM.json'),
-                );
-        }
-      },
+                ),
+              );
+            } else {
+              FolderModel? mainfoldermodel;
+              List<FolderModel> foldermodellist = snapshot.data!;
+              List<SubFolderModel> newlist = [];
+              for (var element in foldermodellist) {
+                if (element.folderName == widget.foldername) {
+                  mainfoldermodel = element;
+                  for (var i in element.folderModel) {
+                    newlist.add(i);
+                  }
+                }
+              }
+              return newlist.isNotEmpty
+                  ? Expanded(
+                      child: ListView.separated(
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 10),
+                        itemCount: newlist.length,
+                        itemBuilder: (context, index) {
+                          SubFolderModel subFolderModel = newlist[index];
+                          if (subFolderModel.name == 'image') {
+                            File imageFile = File(subFolderModel.path);
+
+                            if (imageFile.existsSync()) {
+                              return InkWell(
+                                  onTap: () {
+                                    imagePdfShareFn(subFolderModel.path);
+                                  },
+                                  onLongPress: () async {
+                                    await imagePdf(context, subFolderModel,
+                                        mainfoldermodel!, subFolderModel.path);
+                                    refreshKey.currentState?.show();
+                                  },
+                                  child: Image.file(imageFile));
+                            } else {
+                              return Text(
+                                'Image is not found',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(),
+                              );
+                            }
+                          } else if (subFolderModel.name == 'pdf') {
+                            return InkWell(
+                              onLongPress: () async {
+                                await imagePdf(context, subFolderModel,
+                                    mainfoldermodel!, subFolderModel.path);
+                                refreshKey.currentState?.show();
+                              },
+                              onTap: () async {
+                                try {
+                                  await OpenFile.open(subFolderModel.path);
+                                } catch (e) {
+                                  print("Error opening file: $e");
+                                }
+                              },
+                              child: Slidable(
+                                endActionPane: ActionPane(
+                                  motion: const StretchMotion(),
+                                  children: [
+                                    const SizedBox(width: 5),
+                                    SlidableAction(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: Colors.blue.shade300,
+                                      label: 'Share',
+                                      icon: Icons.share,
+                                      spacing: 10,
+                                      borderRadius: BorderRadius.circular(9),
+                                      onPressed: (context) async {
+                                        imagePdfShareFn(subFolderModel.path);
+                                      },
+                                    ),
+                                    const SizedBox(width: 5),
+                                  ],
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: const Color(0Xff188F79),
+                                      borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.all(20),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.picture_as_pdf,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        subFolderModel.pdfname!,
+                                        style: GoogleFonts.poppins(
+                                            color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else if (subFolderModel.name == 'folder') {
+                            return InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => StudyMaterialScrn(
+                                          foldername: subFolderModel.path,
+                                          email: widget.email),
+                                    ));
+                              },
+                              child: Slidable(
+                                endActionPane: ActionPane(
+                                  motion: const StretchMotion(),
+                                  children: [
+                                    const SizedBox(width: 5),
+                                    SlidableAction(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: Colors.blue.shade300,
+                                      label: 'Share',
+                                      icon: Icons.share,
+                                      spacing: 10,
+                                      borderRadius: BorderRadius.circular(9),
+                                      onPressed: (context) async {
+                                        List<String> paths = [];
+                                        FolderModel? existfolder;
+                                        final allfolder =
+                                            await getFolderFromHive(
+                                                widget.email);
+                                        for (var folder in allfolder) {
+                                          if (folder.folderName ==
+                                              subFolderModel.path) {
+                                            existfolder = folder;
+                                            for (var subfolder
+                                                in existfolder.folderModel) {
+                                              if (subfolder.name != 'folder') {
+                                                paths.add(subfolder.path);
+                                              }
+                                            }
+                                          }
+                                        }
+                                        shareFolderFn(paths, context);
+                                      },
+                                    ),
+                                    const SizedBox(width: 5),
+                                    SlidableAction(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: Colors.red.shade300,
+                                      label: 'Delete',
+                                      icon: Icons.delete,
+                                      spacing: 10,
+                                      borderRadius: BorderRadius.circular(9),
+                                      onPressed: (context) async {
+                                        await deleteFolder(
+                                            context,
+                                            subFolderModel.path,
+                                            index,
+                                            foldermodellist,
+                                            widget.email,
+                                            mainfoldermodel);
+                                        refreshKey.currentState?.show();
+                                      },
+                                    )
+                                  ],
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: const Color(0Xff188F79),
+                                      borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.only(
+                                      left: 20, top: 40, bottom: 40),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.folder,
+                                        size: 30,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        subFolderModel.path,
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 20, color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return null;
+                        },
+                      ),
+                    )
+                  : Center(
+                      child: LottieBuilder.asset(
+                          'assets/animation/PUyQfE9kMM.json'),
+                    );
+            }
+          },
+        ),
+      ),
     );
   }
 }
@@ -511,9 +594,7 @@ void createFolder(
       Navigator.pop(context);
       newshowSnackbar(context, 'Successfully create Folder',
           'Successfully create Folder $foldername', ContentType.success);
-    } else {
-      print('dafgjhdguhdfsgj.........................');
-    }
+    } else {}
   } else {
     newshowSnackbar(context, 'Folder name Already existing',
         'please create another folder name', ContentType.failure);
@@ -600,14 +681,14 @@ int getKeyOfFoldermodel(FolderModel folderModel) {
   return key;
 }
 
-void deleteFolder(
+Future<void> deleteFolder(
     BuildContext context,
     String foldername,
     int index,
     List<FolderModel> userfolderlist,
     String email,
-    FolderModel? mainfolderModel) {
-  showDialog(
+    FolderModel? mainfolderModel) async {
+  await showDialog(
     barrierDismissible: false,
     context: context,
     builder: (context) {
@@ -681,4 +762,73 @@ void deleteFolder(
       );
     },
   );
+}
+
+Future<void> imagePdf(BuildContext context, SubFolderModel subFolderModel,
+    FolderModel mainfolderModel, String path) async {
+  await showDialog(
+    barrierDismissible: false,
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Delete ${subFolderModel.name}"),
+        content: Text(
+            "Are you sure you want to delete folder ${subFolderModel.name} ?"),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0Xff188F79)),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text("cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0Xff188F79)),
+            onPressed: () async {
+              List<SubFolderModel> subfolderlist = [];
+              if (mainfolderModel != null) {
+                for (var element in mainfolderModel.folderModel) {
+                  if (element.path != path) {
+                    subfolderlist.add(element);
+                  }
+                }
+                final updatedmodel = FolderModel(
+                    email: mainfolderModel.email,
+                    folderName: mainfolderModel.folderName,
+                    folderModel: subfolderlist,
+                    createtime: mainfolderModel.createtime,
+                    updatetime: DateTime.now());
+                int key = getKeyOfFoldermodel(mainfolderModel);
+                await updateFolderInHive(updatedmodel, key);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text("Yes"),
+          )
+        ],
+      );
+    },
+  );
+}
+
+void imagePdfShareFn(String path) async {
+  final filePath = path;
+  OpenFile.open(filePath);
+  Share.shareFiles([filePath], text: 'image');
+}
+
+void shareFolderFn(List<String> paths, BuildContext context) async {
+  if (paths.isEmpty) {
+    newshowSnackbar(context, 'Folder is Empty', 'Please add pdf and image ',
+        ContentType.failure);
+    return;
+  }
+
+  try {
+    await Share.shareFiles(paths, text: 'Share Files');
+  } catch (e) {
+    print("Error sharing files: $e");
+  }
 }
