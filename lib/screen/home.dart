@@ -1,12 +1,10 @@
 import 'dart:io';
 
-import 'package:eduvista/db/hive.dart';
 import 'package:eduvista/model/usermodel.dart';
 import 'package:eduvista/screen/Home/attendance.dart';
 import 'package:eduvista/screen/Home/messagetoparent.dart';
 import 'package:eduvista/screen/dashboard.dart';
 import 'package:eduvista/screen/examquestions.dart';
-import 'package:eduvista/screen/settings/editprofile.dart';
 import 'package:eduvista/screen/splash.dart';
 import 'package:eduvista/screen/studymaterial.dart';
 import 'package:eduvista/widget/widget.dart';
