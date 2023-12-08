@@ -52,13 +52,15 @@ class _SplashScrnState extends State<SplashScrn> {
     Future.delayed(
       const Duration(seconds: 4),
       () async {
-        UserDetails? user = await getUserDetailsByEmail(email);
+        UserDetails? user;
+        if (issignedIn) {
+          user = await getUserDetailsByEmail(email);
+          await getUserdetails(email);
+        }
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => issignedIn
-                ? DashBoardScrn(
-                    userDetails: user,
-                  )
+                ? DashBoardScrn(userDetails: user)
                 : const WelcomeScrn(),
           ),
         );

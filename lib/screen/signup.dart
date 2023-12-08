@@ -120,7 +120,8 @@ class _SignupScrnState extends State<SignupScrn> {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.only(left: 15, right: 10),
+                        padding:
+                            const EdgeInsets.only(left: 15, right: 10, top: 20),
                         child: Form(
                           key: fromKey,
                           child: Column(
@@ -141,7 +142,7 @@ class _SignupScrnState extends State<SignupScrn> {
                                   }
                                 },
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 15),
                               TextFormWidget(
                                 label: 'Email',
                                 icon: Icons.email_outlined,
@@ -154,7 +155,7 @@ class _SignupScrnState extends State<SignupScrn> {
                                       : "Please enter a valid email";
                                 },
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 15),
                               TextFormWidget(
                                   icon: Icons.phone_outlined,
                                   label: 'Phone No',
@@ -165,7 +166,7 @@ class _SignupScrnState extends State<SignupScrn> {
                                         ? null
                                         : "Please enter valid mobile number";
                                   }),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 15),
                               TextFormWidget(
                                 obscurebool: passbool,
                                 suffixicon: passbool
@@ -187,7 +188,7 @@ class _SignupScrnState extends State<SignupScrn> {
                                   }
                                 },
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 15),
                               SizedBox(
                                 width: size.width,
                                 height: 50,
@@ -197,35 +198,6 @@ class _SignupScrnState extends State<SignupScrn> {
                                     },
                                     title: 'CREATE AN ACCOUNT'),
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                "Or Sign Up with",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: [
-                                  AuthContainerLoginSignupWidget(
-                                    ontap: () =>
-                                        AuthService().signInWithGoogle(context),
-                                    size: size,
-                                    imagesrc: 'assets/images/google.png',
-                                    title: 'Google',
-                                  ),
-                                  AuthContainerLoginSignupWidget(
-                                    ontap: () => AuthService()
-                                        .signInWithFacebook(context),
-                                    size: size,
-                                    imagesrc: 'assets/images/facebook.png',
-                                    title: 'Facebook',
-                                  ),
-                                ],
-                              )
                             ],
                           ),
                         ),

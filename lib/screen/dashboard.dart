@@ -1,3 +1,4 @@
+import 'package:eduvista/db/hive.dart';
 import 'package:eduvista/model/usermodel.dart';
 import 'package:eduvista/screen/favorites.dart';
 import 'package:eduvista/screen/home.dart';
@@ -26,8 +27,7 @@ class _DashBoardScrnState extends State<DashBoardScrn> {
 
     pages = [
       HomeScrn(userDetails: widget.userDetails),
-      const NotificationScrn(),
-      const FavoritesScrn(),
+      FavoritesScrn(user: widget.userDetails),
       ProfileScrn(userDetails: widget.userDetails),
     ];
   }
@@ -59,10 +59,6 @@ class _DashBoardScrnState extends State<DashBoardScrn> {
                 label: 'Home',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.notifications),
-                label: 'Notification',
-              ),
-              BottomNavigationBarItem(
                 icon: Icon(Icons.favorite),
                 label: 'Favorites',
               ),
@@ -76,4 +72,12 @@ class _DashBoardScrnState extends State<DashBoardScrn> {
       ),
     );
   }
+}
+
+ValueNotifier<UserDetails?> userdetailsvlauenotifiermain = ValueNotifier(
+    UserDetails(name: '', email: '', password: '', phonenumber: ''));
+Future<void> getUserdetails(String email) async {
+  userdetailsvlauenotifiermain.value = await getUserDetailsByEmail(email);
+  print(userdetailsvlauenotifiermain.value!.name);
+  userdetailsvlauenotifiermain.notifyListeners();
 }

@@ -110,7 +110,8 @@ class _LoginScrnState extends State<LoginScrn> {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.only(left: 15, right: 10),
+                        padding:
+                            const EdgeInsets.only(left: 15, right: 10, top: 30),
                         child: Form(
                           key: fromKey,
                           child: Column(
@@ -128,7 +129,7 @@ class _LoginScrnState extends State<LoginScrn> {
                                       : "Please enter a valid email";
                                 },
                               ),
-                              const SizedBox(height: 15),
+                              const SizedBox(height: 20),
                               TextFormWidget(
                                 obscurebool: passbool,
                                 suffixicon: passbool
@@ -150,7 +151,7 @@ class _LoginScrnState extends State<LoginScrn> {
                                   }
                                 },
                               ),
-                              const SizedBox(height: 15),
+                              const SizedBox(height: 20),
                               SizedBox(
                                 width: size.width,
                                 height: 50,
@@ -160,36 +161,7 @@ class _LoginScrnState extends State<LoginScrn> {
                                     },
                                     title: 'CREATE AN ACCOUNT'),
                               ),
-                              const SizedBox(height: 15),
-                              Text(
-                                "Or Login with",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              const SizedBox(height: 15),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: [
-                                  AuthContainerLoginSignupWidget(
-                                    ontap: () =>
-                                        AuthService().signInWithGoogle(context),
-                                    size: size,
-                                    imagesrc: 'assets/images/google.png',
-                                    title: 'Google',
-                                  ),
-                                  AuthContainerLoginSignupWidget(
-                                    ontap: () =>
-                                        AuthService().signInWithGoogle(context),
-                                    size: size,
-                                    imagesrc: 'assets/images/facebook.png',
-                                    title: 'Facebook',
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 15),
+                              const SizedBox(height: 20),
                               TextButton(
                                 onPressed: () {
                                   Navigator.pushReplacement(

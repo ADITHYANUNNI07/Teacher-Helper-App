@@ -1,10 +1,10 @@
-// ignore_for_file: use_build_context_synchronously, implementation_imports, unnecessary_null_comparison
-
+// ignore_for_file: use_build_context_synchronously, implementation_imports, unnecessary_null_comparison, invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+import 'package:path/path.dart';
 import 'dart:io';
 import 'package:eduvista/db/hive.dart';
+import 'package:eduvista/model/favoritesmodel.dart';
 import 'package:eduvista/model/foldermodel.dart';
 import 'package:eduvista/screen/Home/addclass.dart';
-import 'package:eduvista/screen/welcome.dart';
 import 'package:eduvista/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -25,6 +25,9 @@ class StudyMaterialScrn extends StatefulWidget {
   @override
   State<StudyMaterialScrn> createState() => _StudyMaterialScrnState();
 }
+
+ValueNotifier<List<FavoritesModel>> favoritelistvaluenotifier =
+    ValueNotifier<List<FavoritesModel>>([]);
 
 class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
   @override
@@ -147,36 +150,42 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
                                     title: 'Gallery',
                                     icon: Icons.photo_album,
                                     onTap: () async {
-                                      File? pickedImage =
+                                      Map<String, dynamic>? imagemap =
                                           await selectImageFromGallery(
                                               context, ImageSource.gallery);
-                                      setState(() {
-                                        image = pickedImage;
-                                      });
-                                      imageupload(
-                                          image,
-                                          context,
-                                          widget.foldername,
-                                          futurebuilderkey,
-                                          widget.email);
+                                      if (imagemap != null) {
+                                        setState(() {
+                                          image = imagemap['file'];
+                                        });
+                                        imageupload(
+                                            image,
+                                            context,
+                                            widget.foldername,
+                                            futurebuilderkey,
+                                            widget.email,
+                                            imagemap['imageName']);
+                                      }
                                     },
                                   ),
                                   ImageUploadWidget(
                                     title: 'Camera',
                                     icon: Icons.camera_alt,
                                     onTap: () async {
-                                      File? pickedImage =
+                                      Map<String, dynamic>? imagemap =
                                           await selectImageFromGallery(
-                                              context, ImageSource.camera);
-                                      setState(() {
-                                        image = pickedImage;
-                                      });
-                                      imageupload(
-                                          image,
-                                          context,
-                                          widget.foldername,
-                                          futurebuilderkey,
-                                          widget.email);
+                                              context, ImageSource.gallery);
+                                      if (imagemap != null) {
+                                        setState(() {
+                                          image = imagemap['file'];
+                                        });
+                                        imageupload(
+                                            image,
+                                            context,
+                                            widget.foldername,
+                                            futurebuilderkey,
+                                            widget.email,
+                                            imagemap['imageName']);
+                                      }
                                     },
                                   ),
                                 ],
@@ -275,6 +284,18 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
   }
 }
 
+Future<void> getfaviourateList(String email) async {
+  final favoritelist = await getFavoritesFromHive(email);
+  favoritelistvaluenotifier.value = favoritelist;
+  favoritelistvaluenotifier.notifyListeners();
+}
+
+int favoritemodelkey(FavoritesModel favoritesModel) {
+  var box = Hive.box<FavoritesModel>('FavoritesDB');
+  var key = box.keyAt(box.values.toList().indexOf(favoritesModel));
+  return key;
+}
+
 class FutureBuilderclass extends StatefulWidget {
   const FutureBuilderclass({
     Key? key,
@@ -292,6 +313,8 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
   late Future<List<FolderModel>> future;
   GlobalKey<RefreshIndicatorState> refreshKey =
       GlobalKey<RefreshIndicatorState>();
+  final editformkey = GlobalKey<FormState>();
+  TextEditingController editFoldercontroller = TextEditingController();
   Future<List<FolderModel>> refreshTheFuture() async {
     return getFolderFromHive(widget.email);
   }
@@ -304,6 +327,7 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
 
   void refresh() {
     future = getFolderFromHive(widget.email);
+    refreshKey.currentState?.show();
   }
 
   Future<void> refreshthefuture() async {
@@ -365,20 +389,145 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                         itemCount: newlist.length,
                         itemBuilder: (context, index) {
                           SubFolderModel subFolderModel = newlist[index];
+                          bool? isfavorite;
+                          FavoritesModel? favoritesModel;
+                          for (var element in favoritelistvaluenotifier.value) {
+                            if (element.path == subFolderModel.path &&
+                                element.foldername == widget.foldername) {
+                              isfavorite = true;
+                              favoritesModel = element;
+                              break;
+                            }
+                            isfavorite = false;
+                          }
                           if (subFolderModel.name == 'image') {
                             File imageFile = File(subFolderModel.path);
-
                             if (imageFile.existsSync()) {
                               return InkWell(
                                   onTap: () {
-                                    imagePdfShareFn(subFolderModel.path);
+                                    showSelectedImageDialog(context, imageFile);
                                   },
-                                  onLongPress: () async {
-                                    await imagePdf(context, subFolderModel,
-                                        mainfoldermodel!, subFolderModel.path);
-                                    refreshKey.currentState?.show();
-                                  },
-                                  child: Image.file(imageFile));
+                                  child: Slidable(
+                                    endActionPane: ActionPane(
+                                      motion: const StretchMotion(),
+                                      children: [
+                                        const SizedBox(width: 5),
+                                        SlidableAction(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.blue.shade300,
+                                          label: 'Share',
+                                          icon: Icons.share,
+                                          spacing: 10,
+                                          borderRadius:
+                                              BorderRadius.circular(9),
+                                          onPressed: (context) async {
+                                            imagePdfShareFn(
+                                                subFolderModel.path);
+                                          },
+                                        ),
+                                        const SizedBox(width: 5),
+                                        SlidableAction(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.red.shade300,
+                                          label: 'Delete',
+                                          icon: Icons.delete,
+                                          spacing: 10,
+                                          borderRadius:
+                                              BorderRadius.circular(9),
+                                          onPressed: (context) async {
+                                            await imagePdf(
+                                                context,
+                                                subFolderModel,
+                                                mainfoldermodel!,
+                                                subFolderModel.path);
+                                            refreshKey.currentState?.show();
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    child: Container(
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                          color: const Color(0Xff188F79),
+                                          borderRadius:
+                                              BorderRadius.circular(10)),
+                                      padding: const EdgeInsets.all(20),
+                                      child: AspectRatio(
+                                        aspectRatio: 10 / 5,
+                                        child: Row(
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(16.0),
+                                              child: Image.file(imageFile),
+                                            ),
+                                            Expanded(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      subFolderModel.pdfname!,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                              color:
+                                                                  Colors.white),
+                                                    ),
+                                                    IconButton(
+                                                      alignment:
+                                                          Alignment.bottomRight,
+                                                      icon: Icon(
+                                                        isfavorite == true
+                                                            ? Icons.favorite
+                                                            : Icons
+                                                                .favorite_outline,
+                                                        size: 30,
+                                                        color: Colors.white,
+                                                      ),
+                                                      onPressed: () async {
+                                                        if (isfavorite ==
+                                                            true) {
+                                                          int key =
+                                                              favoritemodelkey(
+                                                                  favoritesModel!);
+                                                          await deleteFavoritesFromHive(
+                                                              key);
+                                                        } else {
+                                                          final favoritesModel =
+                                                              FavoritesModel(
+                                                            foldername: widget
+                                                                .foldername,
+                                                            email: widget.email,
+                                                            path: subFolderModel
+                                                                .path,
+                                                            type: subFolderModel
+                                                                .name,
+                                                          );
+
+                                                          await addFavoritetoHive(
+                                                              favoritesModel);
+                                                        }
+                                                        refreshKey.currentState
+                                                            ?.show();
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ));
                             } else {
                               return Text(
                                 'Image is not found',
@@ -396,9 +545,7 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                               onTap: () async {
                                 try {
                                   await OpenFile.open(subFolderModel.path);
-                                } catch (e) {
-                                  print("Error opening file: $e");
-                                }
+                                } catch (e) {}
                               },
                               child: Slidable(
                                 endActionPane: ActionPane(
@@ -436,6 +583,41 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                         style: GoogleFonts.poppins(
                                             color: Colors.white),
                                       ),
+                                      Expanded(
+                                        child: IconButton(
+                                          alignment: Alignment.bottomRight,
+                                          icon: Icon(
+                                            isfavorite == true
+                                                ? Icons.favorite
+                                                : Icons.favorite_outline,
+                                            size: 30,
+                                            color: Colors.white,
+                                          ),
+                                          onPressed: () async {
+                                            if (isfavorite == true) {
+                                              int key = favoritemodelkey(
+                                                  favoritesModel!);
+                                              await deleteFavoritesFromHive(
+                                                  key);
+                                            } else {
+                                              final favoritesModel =
+                                                  FavoritesModel(
+                                                      pdfname: subFolderModel
+                                                          .pdfname,
+                                                      foldername:
+                                                          widget.foldername,
+                                                      email: widget.email,
+                                                      path: subFolderModel.path,
+                                                      type:
+                                                          subFolderModel.name);
+
+                                              await addFavoritetoHive(
+                                                  favoritesModel);
+                                            }
+                                            refreshKey.currentState?.show();
+                                          },
+                                        ),
+                                      )
                                     ],
                                   ),
                                 ),
@@ -453,6 +635,31 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                     ));
                               },
                               child: Slidable(
+                                startActionPane: ActionPane(
+                                    motion: const StretchMotion(),
+                                    children: [
+                                      SlidableAction(
+                                        foregroundColor: Colors.white,
+                                        backgroundColor: Colors.green.shade300,
+                                        label: 'Edit',
+                                        icon: Icons.edit,
+                                        spacing: 10,
+                                        borderRadius: BorderRadius.circular(9),
+                                        onPressed: (context) async {
+                                          editFoldercontroller.text =
+                                              subFolderModel.path;
+                                          await editfolder(
+                                              editformkey,
+                                              editFoldercontroller,
+                                              subFolderModel,
+                                              context,
+                                              widget.foldername,
+                                              widget.email,
+                                              mainfoldermodel!);
+                                          refreshKey.currentState?.show();
+                                        },
+                                      ),
+                                    ]),
                                 endActionPane: ActionPane(
                                   motion: const StretchMotion(),
                                   children: [
@@ -494,11 +701,14 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                       spacing: 10,
                                       borderRadius: BorderRadius.circular(9),
                                       onPressed: (context) async {
+                                        final mainfolderlist =
+                                            await getFolderFromHive(
+                                                widget.email);
                                         await deleteFolder(
                                             context,
                                             subFolderModel.path,
                                             index,
-                                            foldermodellist,
+                                            mainfolderlist,
                                             widget.email,
                                             mainfoldermodel);
                                         refreshKey.currentState?.show();
@@ -511,7 +721,7 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                       color: const Color(0Xff188F79),
                                       borderRadius: BorderRadius.circular(10)),
                                   padding: const EdgeInsets.only(
-                                      left: 20, top: 40, bottom: 40),
+                                      left: 20, right: 20, top: 40, bottom: 40),
                                   child: Row(
                                     children: [
                                       const Icon(
@@ -520,11 +730,42 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                         color: Colors.white,
                                       ),
                                       const SizedBox(width: 10),
-                                      Text(
-                                        subFolderModel.path,
-                                        style: GoogleFonts.poppins(
-                                            fontSize: 20, color: Colors.white),
+                                      Expanded(
+                                        child: Text(
+                                          subFolderModel.path,
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 20,
+                                              color: Colors.white),
+                                        ),
                                       ),
+                                      IconButton(
+                                        icon: Icon(
+                                          isfavorite == true
+                                              ? Icons.favorite
+                                              : Icons.favorite_outline,
+                                          size: 30,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () async {
+                                          if (isfavorite == true) {
+                                            int key = favoritemodelkey(
+                                                favoritesModel!);
+                                            await deleteFavoritesFromHive(key);
+                                          } else {
+                                            final favoritesModel =
+                                                FavoritesModel(
+                                                    foldername:
+                                                        widget.foldername,
+                                                    email: widget.email,
+                                                    path: subFolderModel.path,
+                                                    type: subFolderModel.name);
+
+                                            await addFavoritetoHive(
+                                                favoritesModel);
+                                          }
+                                          refreshKey.currentState?.show();
+                                        },
+                                      )
                                     ],
                                   ),
                                 ),
@@ -547,6 +788,115 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
   }
 }
 
+Future<void> editfolder(
+    GlobalKey<FormState> editformkey,
+    TextEditingController folderEditingcontroller,
+    SubFolderModel folderModel,
+    BuildContext context,
+    String foldername,
+    String email,
+    FolderModel mainFoldermodel) async {
+  await showDialog(
+    barrierDismissible: false,
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Edit Folder Name"),
+        actions: [
+          Form(
+            key: editformkey,
+            child: TextFormWidget(
+              label: 'Folder Name',
+              icon: Icons.folder,
+              controller: folderEditingcontroller,
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return "Enter Your Folder Name";
+                } else {
+                  return RegExp(r'[!@#<>?:_`"~;[\]\\|=+)(*&^%]').hasMatch(value)
+                      ? "Please enter valid name"
+                      : null;
+                }
+              },
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0Xff188F79)),
+            onPressed: () async {
+              if (editformkey.currentState!.validate()) {
+                bool isalready = false;
+                FolderModel? previousfolderModel;
+                final allfolder = await getFolderFromHive(email);
+
+                for (var folder in allfolder) {
+                  if (folder.folderName == foldername) {
+                    for (var subfolder in folder.folderModel) {
+                      if (subfolder.path == folderEditingcontroller.text) {
+                        isalready = true;
+                      }
+                    }
+                  }
+                  if (folder.folderName == folderModel.path) {
+                    previousfolderModel = folder;
+                    print(previousfolderModel);
+                  }
+                  if (folder.folderName == folderEditingcontroller.text) {
+                    isalready = true;
+                  }
+                }
+                if (isalready == false) {
+                  List<SubFolderModel> newmodels = [];
+                  int key = getKeyOfFoldermodel(mainFoldermodel);
+                  for (var subfolder in mainFoldermodel.folderModel) {
+                    if (subfolder.path == folderModel.path) {
+                      newmodels.add(
+                        SubFolderModel(
+                            path: folderEditingcontroller.text,
+                            name: subfolder.name,
+                            pdfname: subfolder.pdfname),
+                      );
+                    } else {
+                      newmodels.add(subfolder);
+                    }
+                  }
+                  final updateFoldermodel = FolderModel(
+                      email: mainFoldermodel.email,
+                      folderName: mainFoldermodel.folderName,
+                      folderModel: newmodels,
+                      createtime: mainFoldermodel.createtime,
+                      updatetime: DateTime.now());
+                  await updateFolderInHive(updateFoldermodel, key);
+                  if (previousfolderModel != null) {
+                    final updateFoldermodel = FolderModel(
+                        email: mainFoldermodel.email,
+                        folderName: folderEditingcontroller.text,
+                        folderModel: mainFoldermodel.folderModel,
+                        createtime: mainFoldermodel.createtime,
+                        updatetime: DateTime.now());
+                    await updateFolderInHive(updateFoldermodel, key);
+                  }
+                } else {
+                  newshowSnackbar(context, 'Folder name Already existing',
+                      'please create another folder name', ContentType.failure);
+                }
+              }
+              Navigator.pop(context);
+            },
+            child: Text(
+              "UPDATE",
+              style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white),
+            ),
+          )
+        ],
+      );
+    },
+  );
+}
+
 void createFolder(
     String foldername,
     BuildContext context,
@@ -555,11 +905,10 @@ void createFolder(
     GlobalKey<FutureBuilderclassState> futurebuilderkey) async {
   bool isalready = false;
   FolderModel? existfolder;
-  print(email);
+
   final allfolder = await getFolderFromHive(email);
-  print(allfolder.length);
+
   for (var folder in allfolder) {
-    print('${folder.folderName}:::::$foldername');
     if (folder.folderName == foldername) {
       existfolder = folder;
       for (var subfolder in existfolder.folderModel) {
@@ -602,8 +951,13 @@ void createFolder(
   }
 }
 
-void imageupload(File? image, BuildContext context, String foldername,
-    GlobalKey<FutureBuilderclassState> futurebuilderkey, String email) async {
+void imageupload(
+    File? image,
+    BuildContext context,
+    String foldername,
+    GlobalKey<FutureBuilderclassState> futurebuilderkey,
+    String email,
+    String imagename) async {
   FolderModel? existfolder;
   List<FolderModel> allFolder = await getFolderFromHive(email);
   for (var folder in allFolder) {
@@ -613,7 +967,8 @@ void imageupload(File? image, BuildContext context, String foldername,
   }
   if (image != null) {
     List<SubFolderModel> listpath = [];
-    listpath.add(SubFolderModel(path: image.path, name: 'image', pdfname: ''));
+    listpath.add(
+        SubFolderModel(path: image.path, name: 'image', pdfname: imagename));
     if (existfolder != null) {
       int key = getKeyOfFoldermodel(existfolder);
       final foldermodel = FolderModel(
@@ -622,8 +977,8 @@ void imageupload(File? image, BuildContext context, String foldername,
           email: existfolder.email,
           folderName: existfolder.folderName,
           folderModel: List<SubFolderModel>.from(existfolder.folderModel)
-            ..add(
-                SubFolderModel(path: image.path, name: 'image', pdfname: '')));
+            ..add(SubFolderModel(
+                path: image.path, name: 'image', pdfname: imagename)));
       await updateFolderInHive(foldermodel, key);
       final futureBuilderState = futurebuilderkey.currentState;
       if (futureBuilderState != null) {
@@ -656,15 +1011,19 @@ void pdfUpload(PickedPdf pickedPdf, BuildContext context, String foldername,
   if (existfolder != null) {
     int key = getKeyOfFoldermodel(existfolder);
     final foldermodel = FolderModel(
-        createtime: existfolder.createtime,
-        updatetime: DateTime.now(),
-        email: existfolder.email,
-        folderName: existfolder.folderName,
-        folderModel: List<SubFolderModel>.from(existfolder.folderModel)
-          ..add(SubFolderModel(
-              path: pickedPdf.file.path,
-              name: 'pdf',
-              pdfname: pickedPdf.fileName)));
+      createtime: existfolder.createtime,
+      updatetime: DateTime.now(),
+      email: existfolder.email,
+      folderName: existfolder.folderName,
+      folderModel: List<SubFolderModel>.from(existfolder.folderModel)
+        ..add(
+          SubFolderModel(
+            path: pickedPdf.file.path,
+            name: 'pdf',
+            pdfname: pickedPdf.fileName,
+          ),
+        ),
+    );
     await updateFolderInHive(foldermodel, key);
     final futureBuilderState = futurebuilderkey.currentState;
     if (futureBuilderState != null) {
@@ -731,20 +1090,19 @@ Future<void> deleteFolder(
                   }
                 }
                 if (exitfolder != null) {
-                  print('object');
                   int key = getKeyOfFoldermodel(exitfolder);
                   value = await deleteFolderFromHive(key);
                 } else {
                   final newfoldermodel = FolderModel(
-                      createtime: DateTime.now(),
-                      updatetime: DateTime.now(),
-                      email: email,
-                      folderName: foldername,
-                      folderModel: []);
+                    createtime: DateTime.now(),
+                    updatetime: DateTime.now(),
+                    email: email,
+                    folderName: foldername,
+                    folderModel: [],
+                  );
                   await addFoldertoHive(newfoldermodel);
                   int key = getKeyOfFoldermodel(newfoldermodel);
                   value = await deleteFolderFromHive(key);
-                  print(value);
                 }
                 if (value) {
                   newshowSnackbar(context, 'Successfully Deleted',
@@ -828,7 +1186,46 @@ void shareFolderFn(List<String> paths, BuildContext context) async {
 
   try {
     await Share.shareFiles(paths, text: 'Share Files');
+  } catch (e) {}
+}
+
+Future<Map<String, dynamic>?> selectImageFromGallery(
+  BuildContext context,
+  ImageSource option,
+) async {
+  Map<String, dynamic>? result;
+  try {
+    final pickedImage = await ImagePicker().pickImage(source: option);
+    if (pickedImage != null) {
+      final image = File(pickedImage.path);
+      final imageName = basename(image.path);
+      result = {'file': image, 'imageName': imageName};
+    }
   } catch (e) {
-    print("Error sharing files: $e");
+    __showSnackBar(context, e.toString());
   }
+  return result;
+}
+
+void __showSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+    ),
+  );
+}
+
+void showSelectedImageDialog(BuildContext context, File imageFile) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: Image.file(imageFile),
+        ),
+      );
+    },
+  );
 }

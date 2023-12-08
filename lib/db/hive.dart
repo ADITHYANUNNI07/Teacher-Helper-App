@@ -1,4 +1,5 @@
 import 'package:eduvista/model/classmodel.dart';
+import 'package:eduvista/model/favoritesmodel.dart';
 import 'package:eduvista/model/foldermodel.dart';
 import 'package:eduvista/model/questionsmodel.dart';
 import 'package:eduvista/model/studentattendance.dart';
@@ -7,6 +8,7 @@ import 'package:eduvista/model/studentmodel.dart';
 import 'package:eduvista/model/usermodel.dart';
 import 'package:eduvista/screen/dashboard.dart';
 import 'package:eduvista/screen/examquestions.dart';
+import 'package:eduvista/screen/studymaterial.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 
@@ -21,6 +23,7 @@ Future<void> initalizeHiveandAdapter() async {
   Hive.registerAdapter<Questionsmodel>(QuestionsmodelAdapter());
   Hive.registerAdapter<FolderModel>(FolderModelAdapter());
   Hive.registerAdapter<SubFolderModel>(SubFolderModelAdapter());
+  Hive.registerAdapter<FavoritesModel>(FavoritesModelAdapter());
   // Open the Hive box
   await Hive.openBox<UserDetails>('userDB');
   await Hive.openBox<ClassModel>('classDB');
@@ -28,6 +31,7 @@ Future<void> initalizeHiveandAdapter() async {
   await Hive.openBox<AllStudentAttendanceModel>('studentattendanceDB');
   await Hive.openBox<Questionsmodel>('questionsDB');
   await Hive.openBox<FolderModel>('FolderDB');
+  await Hive.openBox<FavoritesModel>('FavoritesDB');
 }
 
 Future<void> addUserDetails(UserDetails user) async {
@@ -245,11 +249,11 @@ Future<List<FolderModel>> getFolderFromHive(String email) async {
   final List<FolderModel> allfolderlist = box.values.toList();
   List<FolderModel> eachfolderlist = [];
   for (FolderModel folder in allfolderlist) {
-    print(folder.email);
     if (folder.email == email) {
       eachfolderlist.add(folder);
     }
   }
+  await getfaviourateList(email);
   return eachfolderlist;
 }
 
@@ -260,6 +264,117 @@ Future<void> updateFolderInHive(FolderModel updateFoldermodel, int key) async {
 
 Future<bool> deleteFolderFromHive(int key) async {
   final box = await Hive.openBox<FolderModel>('FolderDB');
+  try {
+    await box.delete(key);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+Future<void> deleteUserData(String email) async {
+  await deletefolder(email);
+  await deletequestions(email);
+  await deletestudent(email);
+  await deleteuser(email);
+  await deleteclass(email);
+}
+
+Future<void> deletefolder(String email) async {
+  final userBox = await Hive.openBox<FolderModel>('FolderDB');
+  final keysToDelete = userBox.keys.where((key) {
+    final user = userBox.get(key);
+    return user != null && user.email == email;
+  }).toList();
+
+  for (final key in keysToDelete) {
+    await userBox.delete(key);
+  }
+}
+
+Future<void> deletequestions(String email) async {
+  final userBox = await Hive.openBox<Questionsmodel>('questionsDB');
+  final keysToDelete = userBox.keys.where((key) {
+    final user = userBox.get(key);
+    return user != null && user.email == email;
+  }).toList();
+
+  for (final key in keysToDelete) {
+    await userBox.delete(key);
+  }
+}
+
+Future<void> deletestudent(String email) async {
+  final userBox = await Hive.openBox<StudentModel>('studentDB');
+  final keysToDelete = userBox.keys.where((key) {
+    final user = userBox.get(key);
+    return user != null && user.email == email;
+  }).toList();
+
+  for (final key in keysToDelete) {
+    await userBox.delete(key);
+  }
+}
+
+Future<void> deleteuser(String email) async {
+  final userBox = await Hive.openBox<UserDetails>('userDB');
+  final keysToDelete = userBox.keys.where((key) {
+    final user = userBox.get(key);
+    return user != null && user.email == email;
+  }).toList();
+
+  for (final key in keysToDelete) {
+    await userBox.delete(key);
+  }
+}
+
+Future<void> deleteclass(String email) async {
+  final userBox = await Hive.openBox<ClassModel>('classDB');
+  final keysToDelete = userBox.keys.where((key) {
+    final user = userBox.get(key);
+    return user != null && user.email == email;
+  }).toList();
+
+  for (final key in keysToDelete) {
+    await userBox.delete(key);
+  }
+}
+
+Future<void> updateuserdetails(int key, UserDetails updateduserdetails) async {
+  var box = await Hive.openBox<UserDetails>('userDB');
+  await box.put(key, updateduserdetails);
+}
+
+Future<bool> addFavoritetoHive(FavoritesModel favoritesModel) async {
+  final box = await Hive.openBox<FavoritesModel>('FavoritesDB');
+
+  try {
+    final index = await box.add(favoritesModel);
+    if (index >= 0) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    print(e);
+    return false;
+  }
+}
+
+Future<List<FavoritesModel>> getFavoritesFromHive(String email) async {
+  final box = await Hive.openBox<FavoritesModel>('FavoritesDB');
+  final List<FavoritesModel> allfavoriteslist = box.values.toList();
+  List<FavoritesModel> eachuserfavoriteslist = [];
+  for (FavoritesModel folder in allfavoriteslist) {
+    if (folder.email == email) {
+      eachuserfavoriteslist.add(folder);
+    }
+  }
+  return eachuserfavoriteslist;
+}
+
+Future<bool> deleteFavoritesFromHive(int key) async {
+  final box = await Hive.openBox<FavoritesModel>('FavoritesDB');
   try {
     await box.delete(key);
     return true;
