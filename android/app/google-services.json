@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:89300574377:android:c55fb186adc1511e5c89b8",
         "android_client_info": {
-          "package_name": "com.example.eduvista"
+          "package_name": "app.vista.eduvista"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "89300574377-q5slqrnrctp098fh0aan9bilb3rmavvc.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.eduvista",
+            "package_name": "app.vista.eduvista",
             "certificate_hash": "53c2f660139188e89b454b07213b4999c61e9251"
           }
         },

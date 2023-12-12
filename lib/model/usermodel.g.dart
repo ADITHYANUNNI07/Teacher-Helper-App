@@ -19,7 +19,7 @@ class UserDetailsAdapter extends TypeAdapter<UserDetails> {
     return UserDetails(
       folderName: (fields[8] as List?)
           ?.map((dynamic e) => (e as Map).cast<String, dynamic>())
-          .toList(),
+          ?.toList(),
       subject: fields[5] as String?,
       institutionname: fields[6] as String?,
       classteacher: fields[7] as String?,
