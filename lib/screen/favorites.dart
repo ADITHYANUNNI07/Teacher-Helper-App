@@ -1,4 +1,4 @@
-import 'dart:io';
+// ignore_for_file: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
 
 import 'package:eduvista/db/hive.dart';
 import 'package:eduvista/model/favoritesmodel.dart';
@@ -67,45 +67,118 @@ class _FavoritesScrnState extends State<FavoritesScrn> {
                                   bool isfavorite = true;
 
                                   if (subFolderModel.type == 'image') {
-                                    File imageFile = File(subFolderModel.path);
-                                    if (imageFile.existsSync()) {
+                                    String imageFile = subFolderModel.path;
+                                    if (imageFile.isNotEmpty) {
                                       return InkWell(
                                           onTap: () {
-                                            imagePdfShareFn(
-                                                subFolderModel.path);
+                                            showSelectedImageDialog(
+                                                context, imageFile);
                                           },
-                                          child: Stack(
-                                            children: [
-                                              Image.file(imageFile),
-                                              Positioned(
-                                                right: 20,
-                                                top: 10,
-                                                child: IconButton(
-                                                  alignment:
-                                                      Alignment.bottomRight,
-                                                  icon: Icon(
-                                                    isfavorite == true
-                                                        ? Icons.favorite
-                                                        : Icons
-                                                            .favorite_outline,
-                                                    size: 30,
-                                                    color:
-                                                        const Color(0Xff188F79),
-                                                  ),
-                                                  onPressed: () async {
-                                                    if (isfavorite == true) {
-                                                      int key =
-                                                          favoritemodelkey(
-                                                              subFolderModel);
-                                                      await deleteFavoritesFromHive(
-                                                          key);
-                                                    }
-                                                    refreshFavKey.currentState
-                                                        ?.show();
+                                          child: Slidable(
+                                            endActionPane: ActionPane(
+                                              motion: const StretchMotion(),
+                                              children: [
+                                                const SizedBox(width: 5),
+                                                SlidableAction(
+                                                  foregroundColor: Colors.white,
+                                                  backgroundColor:
+                                                      Colors.blue.shade300,
+                                                  label: 'Share',
+                                                  icon: Icons.share,
+                                                  spacing: 10,
+                                                  borderRadius:
+                                                      BorderRadius.circular(9),
+                                                  onPressed: (context) async {
+                                                    imagePdfFavShareFn(
+                                                        subFolderModel);
                                                   },
                                                 ),
-                                              )
-                                            ],
+                                                const SizedBox(width: 5),
+                                              ],
+                                            ),
+                                            child: Container(
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                  color:
+                                                      const Color(0Xff188F79),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          10)),
+                                              padding: const EdgeInsets.all(20),
+                                              child: AspectRatio(
+                                                aspectRatio: 10 / 5,
+                                                child: Row(
+                                                  children: [
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              16.0),
+                                                      child: Image.network(
+                                                          imageFile),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal:
+                                                                    8.0),
+                                                        child: Column(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              subFolderModel
+                                                                  .pdfname,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: GoogleFonts
+                                                                  .poppins(
+                                                                      color: Colors
+                                                                          .white),
+                                                            ),
+                                                            IconButton(
+                                                              alignment: Alignment
+                                                                  .bottomRight,
+                                                              icon: Icon(
+                                                                isfavorite ==
+                                                                        true
+                                                                    ? Icons
+                                                                        .favorite
+                                                                    : Icons
+                                                                        .favorite_outline,
+                                                                size: 30,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                              onPressed:
+                                                                  () async {
+                                                                if (isfavorite ==
+                                                                    true) {
+                                                                  int key =
+                                                                      favoritemodelkey(
+                                                                          subFolderModel);
+                                                                  await deleteFavoritesFromHive(
+                                                                      key);
+                                                                }
+                                                                refreshFavKey
+                                                                    .currentState
+                                                                    ?.show();
+                                                              },
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
                                           ));
                                     } else {
                                       return Text(
@@ -137,8 +210,8 @@ class _FavoritesScrnState extends State<FavoritesScrn> {
                                               borderRadius:
                                                   BorderRadius.circular(9),
                                               onPressed: (context) async {
-                                                imagePdfShareFn(
-                                                    subFolderModel.path);
+                                                imagePdfFavShareFn(
+                                                    subFolderModel);
                                               },
                                             ),
                                             const SizedBox(width: 5),
@@ -302,6 +375,7 @@ class _FavoritesScrnState extends State<FavoritesScrn> {
                                       ),
                                     );
                                   }
+                                  return null;
                                 },
                                 separatorBuilder: (context, index) =>
                                     const SizedBox(height: 7),

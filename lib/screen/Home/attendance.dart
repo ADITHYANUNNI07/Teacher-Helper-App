@@ -1,6 +1,5 @@
 // ignore_for_file: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member, use_build_context_synchronously
 
-import 'dart:io';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:eduvista/db/hive.dart';
 import 'package:eduvista/model/classmodel.dart';
@@ -11,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:http/http.dart' as http;
 
 class AttendanceScrn extends StatefulWidget {
   const AttendanceScrn({super.key, required this.email});
@@ -66,14 +66,13 @@ class _AttendanceScrnState extends State<AttendanceScrn> {
                   builder: (context, classModels, child) {
                     return classModels.isEmpty
                         ? Center(
-                            child: Container(
-                              child: LottieBuilder.asset(
-                                  'assets/animation/PUyQfE9kMM.json'),
-                            ),
+                            child: LottieBuilder.asset(
+                                'assets/animation/PUyQfE9kMM.json'),
                           )
                         : ListView.separated(
                             itemCount: classModels.length,
                             itemBuilder: (context, index) {
+                              print(classModels[index].image);
                               return Slidable(
                                 endActionPane: ActionPane(
                                     motion: const StretchMotion(),
@@ -113,12 +112,34 @@ class _AttendanceScrnState extends State<AttendanceScrn> {
                                     ),
                                     child: Row(
                                       children: [
-                                        CircleAvatar(
-                                          radius: 55,
-                                          backgroundColor: Colors.white,
-                                          backgroundImage: FileImage(
-                                            File(classModels[index].image),
-                                          ),
+                                        FutureBuilder<String>(
+                                          future: getImageUrl(
+                                              classModels[index].image),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return CircleAvatar(
+                                                radius: 55,
+                                                backgroundColor: Colors.white,
+                                                child: LottieBuilder.asset(
+                                                    'assets/animation/Animation-1703042156574.json'),
+                                              );
+                                            } else if (snapshot.hasError) {
+                                              return CircleAvatar(
+                                                radius: 55,
+                                                backgroundColor: Colors.white,
+                                                child: LottieBuilder.asset(
+                                                    'assets/animation/animation_lo4efsbq.json'),
+                                              );
+                                            } else {
+                                              return CircleAvatar(
+                                                radius: 55,
+                                                backgroundColor: Colors.white,
+                                                backgroundImage: NetworkImage(
+                                                    classModels[index].image),
+                                              );
+                                            }
+                                          },
                                         ),
                                         const SizedBox(width: 15),
                                         Column(
@@ -148,7 +169,8 @@ class _AttendanceScrnState extends State<AttendanceScrn> {
                               );
                             },
                             separatorBuilder: (context, index) =>
-                                const SizedBox(height: 15));
+                                const SizedBox(height: 15),
+                          );
                   },
                 ),
               ),
@@ -221,4 +243,18 @@ Future<void> updateClassModels(String email) async {
   List<ClassModel> userClassModels = await getClassByEmail(email);
   classModelsNotifier.value = userClassModels;
   classModelsNotifier.notifyListeners();
+}
+
+Future<String> getImageUrl(String url) async {
+  try {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      throw Exception('Failed to load image: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error fetching image: $e');
+    throw Exception('Failed to load image');
+  }
 }

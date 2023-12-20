@@ -28,7 +28,7 @@ class SubFolderModel {
   @HiveField(1)
   String name;
   @HiveField(2)
-  String? pdfname;
+  String pdfname;
 
   SubFolderModel({
     required this.path,

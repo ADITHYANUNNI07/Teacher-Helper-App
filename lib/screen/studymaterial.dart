@@ -1,4 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, implementation_imports, unnecessary_null_comparison, invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+import 'package:eduvista/screen/Home/attendance.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart';
 import 'dart:io';
 import 'package:eduvista/db/hive.dart';
@@ -16,6 +19,8 @@ import 'package:lottie/lottie.dart';
 import 'package:awesome_snackbar_content/src/content_type.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share/share.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 
 class StudyMaterialScrn extends StatefulWidget {
   const StudyMaterialScrn(
@@ -26,6 +31,7 @@ class StudyMaterialScrn extends StatefulWidget {
   State<StudyMaterialScrn> createState() => _StudyMaterialScrnState();
 }
 
+final ValueNotifier<bool> isloadingvaluenotifier = ValueNotifier<bool>(false);
 ValueNotifier<List<FavoritesModel>> favoritelistvaluenotifier =
     ValueNotifier<List<FavoritesModel>>([]);
 
@@ -99,18 +105,27 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
             centerTitle: true,
             elevation: 0,
           ),
-          body: Container(
-              width: size.width,
-              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 5),
-              child: Column(
-                children: [
-                  FutureBuilderclass(
-                    key: futurebuilderkey,
-                    email: widget.email,
-                    foldername: widget.foldername,
-                  ),
-                ],
-              )),
+          body: ValueListenableBuilder(
+              valueListenable: isloadingvaluenotifier,
+              builder: (context, isloading, child) {
+                return isloading
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : Container(
+                        width: size.width,
+                        padding: const EdgeInsets.only(
+                            left: 10, right: 10, bottom: 5),
+                        child: Column(
+                          children: [
+                            FutureBuilderclass(
+                              key: futurebuilderkey,
+                              email: widget.email,
+                              foldername: widget.foldername,
+                            ),
+                          ],
+                        ));
+              }),
           floatingActionButton: SpeedDial(
             animatedIcon: AnimatedIcons.add_event,
             animatedIconTheme: const IconThemeData(size: 22.0),
@@ -157,6 +172,7 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
                                         setState(() {
                                           image = imagemap['file'];
                                         });
+                                        Navigator.pop(context);
                                         imageupload(
                                             image,
                                             context,
@@ -178,6 +194,7 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
                                         setState(() {
                                           image = imagemap['file'];
                                         });
+                                        Navigator.pop(context);
                                         imageupload(
                                             image,
                                             context,
@@ -382,363 +399,240 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                 }
               }
               return newlist.isNotEmpty
-                  ? Expanded(
-                      child: ListView.separated(
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 10),
-                        itemCount: newlist.length,
-                        itemBuilder: (context, index) {
-                          SubFolderModel subFolderModel = newlist[index];
-                          bool? isfavorite;
-                          FavoritesModel? favoritesModel;
-                          for (var element in favoritelistvaluenotifier.value) {
-                            if (element.path == subFolderModel.path &&
-                                element.foldername == widget.foldername) {
-                              isfavorite = true;
-                              favoritesModel = element;
-                              break;
-                            }
-                            isfavorite = false;
+                  ? ListView.separated(
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 10),
+                      itemCount: newlist.length,
+                      itemBuilder: (context, index) {
+                        SubFolderModel subFolderModel = newlist[index];
+                        bool? isfavorite;
+                        FavoritesModel? favoritesModel;
+                        for (var element in favoritelistvaluenotifier.value) {
+                          if (element.path == subFolderModel.path &&
+                              element.foldername == widget.foldername) {
+                            isfavorite = true;
+                            favoritesModel = element;
+                            break;
                           }
-                          if (subFolderModel.name == 'image') {
-                            File imageFile = File(subFolderModel.path);
-                            if (imageFile.existsSync()) {
-                              return InkWell(
-                                  onTap: () {
-                                    showSelectedImageDialog(context, imageFile);
-                                  },
-                                  child: Slidable(
-                                    endActionPane: ActionPane(
-                                      motion: const StretchMotion(),
-                                      children: [
-                                        const SizedBox(width: 5),
-                                        SlidableAction(
-                                          foregroundColor: Colors.white,
-                                          backgroundColor: Colors.blue.shade300,
-                                          label: 'Share',
-                                          icon: Icons.share,
-                                          spacing: 10,
-                                          borderRadius:
-                                              BorderRadius.circular(9),
-                                          onPressed: (context) async {
-                                            imagePdfShareFn(
-                                                subFolderModel.path);
-                                          },
-                                        ),
-                                        const SizedBox(width: 5),
-                                        SlidableAction(
-                                          foregroundColor: Colors.white,
-                                          backgroundColor: Colors.red.shade300,
-                                          label: 'Delete',
-                                          icon: Icons.delete,
-                                          spacing: 10,
-                                          borderRadius:
-                                              BorderRadius.circular(9),
-                                          onPressed: (context) async {
-                                            await imagePdf(
-                                                context,
-                                                subFolderModel,
-                                                mainfoldermodel!,
-                                                subFolderModel.path);
-                                            refreshKey.currentState?.show();
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                    child: Container(
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                          color: const Color(0Xff188F79),
-                                          borderRadius:
-                                              BorderRadius.circular(10)),
-                                      padding: const EdgeInsets.all(20),
-                                      child: AspectRatio(
-                                        aspectRatio: 10 / 5,
-                                        child: Row(
-                                          children: [
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(16.0),
-                                              child: Image.file(imageFile),
-                                            ),
-                                            Expanded(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8.0),
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      subFolderModel.pdfname!,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                              color:
-                                                                  Colors.white),
-                                                    ),
-                                                    IconButton(
-                                                      alignment:
-                                                          Alignment.bottomRight,
-                                                      icon: Icon(
-                                                        isfavorite == true
-                                                            ? Icons.favorite
-                                                            : Icons
-                                                                .favorite_outline,
-                                                        size: 30,
-                                                        color: Colors.white,
-                                                      ),
-                                                      onPressed: () async {
-                                                        if (isfavorite ==
-                                                            true) {
-                                                          int key =
-                                                              favoritemodelkey(
-                                                                  favoritesModel!);
-                                                          await deleteFavoritesFromHive(
-                                                              key);
-                                                        } else {
-                                                          final favoritesModel =
-                                                              FavoritesModel(
-                                                            foldername: widget
-                                                                .foldername,
-                                                            email: widget.email,
-                                                            path: subFolderModel
-                                                                .path,
-                                                            type: subFolderModel
-                                                                .name,
-                                                          );
-
-                                                          await addFavoritetoHive(
-                                                              favoritesModel);
-                                                        }
-                                                        refreshKey.currentState
-                                                            ?.show();
-                                                      },
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ));
-                            } else {
-                              return Text(
-                                'Image is not found',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(),
-                              );
-                            }
-                          } else if (subFolderModel.name == 'pdf') {
+                          isfavorite = false;
+                        }
+                        if (subFolderModel.name == 'image') {
+                          String imageFile = subFolderModel.path;
+                          if (imageFile.isNotEmpty) {
                             return InkWell(
-                              onLongPress: () async {
-                                await imagePdf(context, subFolderModel,
-                                    mainfoldermodel!, subFolderModel.path);
-                                refreshKey.currentState?.show();
-                              },
-                              onTap: () async {
-                                try {
-                                  await OpenFile.open(subFolderModel.path);
-                                } catch (e) {}
-                              },
-                              child: Slidable(
-                                endActionPane: ActionPane(
-                                  motion: const StretchMotion(),
-                                  children: [
-                                    const SizedBox(width: 5),
-                                    SlidableAction(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor: Colors.blue.shade300,
-                                      label: 'Share',
-                                      icon: Icons.share,
-                                      spacing: 10,
-                                      borderRadius: BorderRadius.circular(9),
-                                      onPressed: (context) async {
-                                        imagePdfShareFn(subFolderModel.path);
-                                      },
-                                    ),
-                                    const SizedBox(width: 5),
-                                  ],
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      color: const Color(0Xff188F79),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.all(20),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.picture_as_pdf,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        subFolderModel.pdfname!,
-                                        style: GoogleFonts.poppins(
-                                            color: Colors.white),
-                                      ),
-                                      Expanded(
-                                        child: IconButton(
-                                          alignment: Alignment.bottomRight,
-                                          icon: Icon(
-                                            isfavorite == true
-                                                ? Icons.favorite
-                                                : Icons.favorite_outline,
-                                            size: 30,
-                                            color: Colors.white,
-                                          ),
-                                          onPressed: () async {
-                                            if (isfavorite == true) {
-                                              int key = favoritemodelkey(
-                                                  favoritesModel!);
-                                              await deleteFavoritesFromHive(
-                                                  key);
-                                            } else {
-                                              final favoritesModel =
-                                                  FavoritesModel(
-                                                      pdfname: subFolderModel
-                                                          .pdfname,
-                                                      foldername:
-                                                          widget.foldername,
-                                                      email: widget.email,
-                                                      path: subFolderModel.path,
-                                                      type:
-                                                          subFolderModel.name);
-
-                                              await addFavoritetoHive(
-                                                  favoritesModel);
-                                            }
-                                            refreshKey.currentState?.show();
-                                          },
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          } else if (subFolderModel.name == 'folder') {
-                            return InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => StudyMaterialScrn(
-                                          foldername: subFolderModel.path,
-                                          email: widget.email),
-                                    ));
-                              },
-                              child: Slidable(
-                                startActionPane: ActionPane(
+                                onTap: () {
+                                  showSelectedImageDialog(context, imageFile);
+                                },
+                                child: Slidable(
+                                  endActionPane: ActionPane(
                                     motion: const StretchMotion(),
                                     children: [
+                                      const SizedBox(width: 5),
                                       SlidableAction(
                                         foregroundColor: Colors.white,
-                                        backgroundColor: Colors.green.shade300,
-                                        label: 'Edit',
-                                        icon: Icons.edit,
+                                        backgroundColor: Colors.blue.shade300,
+                                        label: 'Share',
+                                        icon: Icons.share,
                                         spacing: 10,
                                         borderRadius: BorderRadius.circular(9),
                                         onPressed: (context) async {
-                                          editFoldercontroller.text =
-                                              subFolderModel.path;
-                                          await editfolder(
-                                              editformkey,
-                                              editFoldercontroller,
-                                              subFolderModel,
+                                          imagePdfShareFn(subFolderModel);
+                                        },
+                                      ),
+                                      const SizedBox(width: 5),
+                                      SlidableAction(
+                                        foregroundColor: Colors.white,
+                                        backgroundColor: Colors.red.shade300,
+                                        label: 'Delete',
+                                        icon: Icons.delete,
+                                        spacing: 10,
+                                        borderRadius: BorderRadius.circular(9),
+                                        onPressed: (context) async {
+                                          await imagePdf(
                                               context,
-                                              widget.foldername,
-                                              widget.email,
-                                              mainfoldermodel!);
+                                              subFolderModel,
+                                              mainfoldermodel!,
+                                              subFolderModel.path);
                                           refreshKey.currentState?.show();
                                         },
                                       ),
-                                    ]),
-                                endActionPane: ActionPane(
-                                  motion: const StretchMotion(),
-                                  children: [
-                                    const SizedBox(width: 5),
-                                    SlidableAction(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor: Colors.blue.shade300,
-                                      label: 'Share',
-                                      icon: Icons.share,
-                                      spacing: 10,
-                                      borderRadius: BorderRadius.circular(9),
-                                      onPressed: (context) async {
-                                        List<String> paths = [];
-                                        FolderModel? existfolder;
-                                        final allfolder =
-                                            await getFolderFromHive(
-                                                widget.email);
-                                        for (var folder in allfolder) {
-                                          if (folder.folderName ==
-                                              subFolderModel.path) {
-                                            existfolder = folder;
-                                            for (var subfolder
-                                                in existfolder.folderModel) {
-                                              if (subfolder.name != 'folder') {
-                                                paths.add(subfolder.path);
+                                    ],
+                                  ),
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                        color: const Color(0Xff188F79),
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.all(20),
+                                    child: AspectRatio(
+                                      aspectRatio: 10 / 5,
+                                      child: Row(
+                                        children: [
+                                          FutureBuilder<String>(
+                                            future: getImageUrl(imageFile),
+                                            builder: (context, snapshot) {
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.waiting) {
+                                                return CircleAvatar(
+                                                  radius: 55,
+                                                  backgroundColor: Colors.white,
+                                                  child: LottieBuilder.asset(
+                                                      'assets/animation/Animation-1703042156574.json'),
+                                                );
+                                              } else if (snapshot.hasError) {
+                                                return CircleAvatar(
+                                                  radius: 55,
+                                                  backgroundColor: Colors.white,
+                                                  child: LottieBuilder.asset(
+                                                      'assets/animation/animation_lo4efsbq.json'),
+                                                );
+                                              } else {
+                                                return CircleAvatar(
+                                                  radius: 55,
+                                                  backgroundColor: Colors.white,
+                                                  backgroundImage:
+                                                      NetworkImage(imageFile),
+                                                );
                                               }
-                                            }
-                                          }
-                                        }
-                                        shareFolderFn(paths, context);
-                                      },
+                                            },
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8.0),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    subFolderModel.pdfname,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: GoogleFonts.poppins(
+                                                        color: Colors.white),
+                                                  ),
+                                                  IconButton(
+                                                    alignment:
+                                                        Alignment.bottomRight,
+                                                    icon: Icon(
+                                                      isfavorite == true
+                                                          ? Icons.favorite
+                                                          : Icons
+                                                              .favorite_outline,
+                                                      size: 30,
+                                                      color: Colors.white,
+                                                    ),
+                                                    onPressed: () async {
+                                                      if (isfavorite == true) {
+                                                        int key =
+                                                            favoritemodelkey(
+                                                                favoritesModel!);
+                                                        await deleteFavoritesFromHive(
+                                                            key);
+                                                      } else {
+                                                        final favoritesModel =
+                                                            FavoritesModel(
+                                                                foldername: widget
+                                                                    .foldername,
+                                                                email: widget
+                                                                    .email,
+                                                                path:
+                                                                    subFolderModel
+                                                                        .path,
+                                                                type:
+                                                                    subFolderModel
+                                                                        .name,
+                                                                pdfname:
+                                                                    subFolderModel
+                                                                        .pdfname);
+
+                                                        await addFavoritetoHive(
+                                                            favoritesModel);
+                                                      }
+                                                      refreshKey.currentState
+                                                          ?.show();
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    const SizedBox(width: 5),
-                                    SlidableAction(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor: Colors.red.shade300,
-                                      label: 'Delete',
-                                      icon: Icons.delete,
-                                      spacing: 10,
-                                      borderRadius: BorderRadius.circular(9),
-                                      onPressed: (context) async {
-                                        final mainfolderlist =
-                                            await getFolderFromHive(
-                                                widget.email);
-                                        await deleteFolder(
-                                            context,
-                                            subFolderModel.path,
-                                            index,
-                                            mainfolderlist,
-                                            widget.email,
-                                            mainfoldermodel);
-                                        refreshKey.currentState?.show();
-                                      },
-                                    )
-                                  ],
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      color: const Color(0Xff188F79),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.only(
-                                      left: 20, right: 20, top: 40, bottom: 40),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.folder,
-                                        size: 30,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          subFolderModel.path,
-                                          style: GoogleFonts.poppins(
-                                              fontSize: 20,
-                                              color: Colors.white),
-                                        ),
-                                      ),
-                                      IconButton(
+                                  ),
+                                ));
+                          } else {
+                            return Text(
+                              'Image is not found',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(),
+                            );
+                          }
+                        } else if (subFolderModel.name == 'pdf') {
+                          return InkWell(
+                            onLongPress: () async {
+                              await imagePdf(context, subFolderModel,
+                                  mainfoldermodel!, subFolderModel.path);
+                              refreshKey.currentState?.show();
+                            },
+                            onTap: () async {
+                              try {
+                                Dio dio = Dio();
+                                Directory tempDir =
+                                    await getTemporaryDirectory();
+                                String tempFilePath =
+                                    '${tempDir.path}/${subFolderModel.pdfname}.pdf';
+                                await dio.download(
+                                    subFolderModel.path, tempFilePath);
+                                await OpenFile.open(tempFilePath);
+                              } catch (e) {
+                                print('Error opening PDF: $e');
+                              }
+                            },
+                            child: Slidable(
+                              endActionPane: ActionPane(
+                                motion: const StretchMotion(),
+                                children: [
+                                  const SizedBox(width: 5),
+                                  SlidableAction(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.blue.shade300,
+                                    label: 'Share',
+                                    icon: Icons.share,
+                                    spacing: 10,
+                                    borderRadius: BorderRadius.circular(9),
+                                    onPressed: (context) async {
+                                      imagePdfShareFn(subFolderModel);
+                                    },
+                                  ),
+                                  const SizedBox(width: 5),
+                                ],
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: const Color(0Xff188F79),
+                                    borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.all(20),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.picture_as_pdf,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      subFolderModel.pdfname,
+                                      style: GoogleFonts.poppins(
+                                          color: Colors.white),
+                                    ),
+                                    Expanded(
+                                      child: IconButton(
+                                        alignment: Alignment.bottomRight,
                                         icon: Icon(
                                           isfavorite == true
                                               ? Icons.favorite
@@ -754,6 +648,8 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                           } else {
                                             final favoritesModel =
                                                 FavoritesModel(
+                                                    pdfname:
+                                                        subFolderModel.pdfname,
                                                     foldername:
                                                         widget.foldername,
                                                     email: widget.email,
@@ -765,16 +661,160 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                           }
                                           refreshKey.currentState?.show();
                                         },
-                                      )
-                                    ],
-                                  ),
+                                      ),
+                                    )
+                                  ],
                                 ),
                               ),
-                            );
-                          }
-                          return null;
-                        },
-                      ),
+                            ),
+                          );
+                        } else if (subFolderModel.name == 'folder') {
+                          return InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => StudyMaterialScrn(
+                                        foldername: subFolderModel.path,
+                                        email: widget.email),
+                                  ));
+                            },
+                            child: Slidable(
+                              startActionPane: ActionPane(
+                                  motion: const StretchMotion(),
+                                  children: [
+                                    SlidableAction(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: Colors.green.shade300,
+                                      label: 'Edit',
+                                      icon: Icons.edit,
+                                      spacing: 10,
+                                      borderRadius: BorderRadius.circular(9),
+                                      onPressed: (context) async {
+                                        editFoldercontroller.text =
+                                            subFolderModel.path;
+                                        await editfolder(
+                                            editformkey,
+                                            editFoldercontroller,
+                                            subFolderModel,
+                                            context,
+                                            widget.foldername,
+                                            widget.email,
+                                            mainfoldermodel!);
+                                        refreshKey.currentState?.show();
+                                      },
+                                    ),
+                                  ]),
+                              endActionPane: ActionPane(
+                                motion: const StretchMotion(),
+                                children: [
+                                  const SizedBox(width: 5),
+                                  SlidableAction(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.blue.shade300,
+                                    label: 'Share',
+                                    icon: Icons.share,
+                                    spacing: 10,
+                                    borderRadius: BorderRadius.circular(9),
+                                    onPressed: (context) async {
+                                      List<String> paths = [];
+                                      FolderModel? existfolder;
+                                      final allfolder =
+                                          await getFolderFromHive(widget.email);
+                                      for (var folder in allfolder) {
+                                        if (folder.folderName ==
+                                            subFolderModel.path) {
+                                          existfolder = folder;
+                                          for (var subfolder
+                                              in existfolder.folderModel) {
+                                            if (subfolder.name != 'folder') {
+                                              paths.add(subfolder.path);
+                                            }
+                                          }
+                                        }
+                                      }
+                                      shareFolderFn(paths, context);
+                                    },
+                                  ),
+                                  const SizedBox(width: 5),
+                                  SlidableAction(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.red.shade300,
+                                    label: 'Delete',
+                                    icon: Icons.delete,
+                                    spacing: 10,
+                                    borderRadius: BorderRadius.circular(9),
+                                    onPressed: (context) async {
+                                      final mainfolderlist =
+                                          await getFolderFromHive(widget.email);
+                                      await deleteFolder(
+                                          context,
+                                          subFolderModel.path,
+                                          index,
+                                          mainfolderlist,
+                                          widget.email,
+                                          mainfoldermodel);
+                                      refreshKey.currentState?.show();
+                                    },
+                                  )
+                                ],
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: const Color(0Xff188F79),
+                                    borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.only(
+                                    left: 20, right: 20, top: 40, bottom: 40),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.folder,
+                                      size: 30,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        subFolderModel.path,
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 20, color: Colors.white),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        isfavorite == true
+                                            ? Icons.favorite
+                                            : Icons.favorite_outline,
+                                        size: 30,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () async {
+                                        if (isfavorite == true) {
+                                          int key =
+                                              favoritemodelkey(favoritesModel!);
+                                          await deleteFavoritesFromHive(key);
+                                        } else {
+                                          final favoritesModel = FavoritesModel(
+                                              pdfname: subFolderModel.pdfname,
+                                              foldername: widget.foldername,
+                                              email: widget.email,
+                                              path: subFolderModel.path,
+                                              type: subFolderModel.name);
+
+                                          await addFavoritetoHive(
+                                              favoritesModel);
+                                        }
+                                        refreshKey.currentState?.show();
+                                      },
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return null;
+                      },
                     )
                   : Center(
                       child: LottieBuilder.asset(
@@ -942,7 +982,7 @@ void createFolder(
       }
       Navigator.pop(context);
       newshowSnackbar(context, 'Successfully create Folder',
-          'Successfully create Folder $foldername', ContentType.success);
+          'Successfully create Folder $newfoldername', ContentType.success);
     } else {}
   } else {
     newshowSnackbar(context, 'Folder name Already existing',
@@ -966,9 +1006,12 @@ void imageupload(
     }
   }
   if (image != null) {
+    isloadingvaluenotifier.value = true;
     List<SubFolderModel> listpath = [];
-    listpath.add(
-        SubFolderModel(path: image.path, name: 'image', pdfname: imagename));
+    final imageurl = await uploadImageAndStoreURL(image, context);
+    listpath.add(SubFolderModel(
+        path: imageurl ?? '', name: 'image', pdfname: imagename));
+
     if (existfolder != null) {
       int key = getKeyOfFoldermodel(existfolder);
       final foldermodel = FolderModel(
@@ -978,13 +1021,13 @@ void imageupload(
           folderName: existfolder.folderName,
           folderModel: List<SubFolderModel>.from(existfolder.folderModel)
             ..add(SubFolderModel(
-                path: image.path, name: 'image', pdfname: imagename)));
+                path: imageurl ?? '', name: 'image', pdfname: imagename)));
       await updateFolderInHive(foldermodel, key);
       final futureBuilderState = futurebuilderkey.currentState;
       if (futureBuilderState != null) {
         futureBuilderState.refresh();
       }
-      Navigator.pop(context);
+      isloadingvaluenotifier.value = false;
       newshowSnackbar(context, 'Successfully upload Image',
           'Successfully upload the image', ContentType.success);
     }
@@ -997,40 +1040,44 @@ void imageupload(
 void pdfUpload(PickedPdf pickedPdf, BuildContext context, String foldername,
     GlobalKey<FutureBuilderclassState> futurebuilderkey, String email) async {
   FolderModel? existfolder;
-  List<FolderModel> allFolder = await getFolderFromHive(email);
-  for (var folder in allFolder) {
-    if (folder.folderName == foldername) {
-      existfolder = folder;
+  isloadingvaluenotifier.value = true;
+  String? pdfurl = await uploadPDFAndStoreURL(pickedPdf, context);
+  if (pdfurl != null) {
+    List<FolderModel> allFolder = await getFolderFromHive(email);
+    for (var folder in allFolder) {
+      if (folder.folderName == foldername) {
+        existfolder = folder;
+      }
     }
-  }
-  List<SubFolderModel> listpath = [];
-  listpath.add(
-    SubFolderModel(
-        path: pickedPdf.file.path, name: 'pdf', pdfname: pickedPdf.fileName),
-  );
-  if (existfolder != null) {
-    int key = getKeyOfFoldermodel(existfolder);
-    final foldermodel = FolderModel(
-      createtime: existfolder.createtime,
-      updatetime: DateTime.now(),
-      email: existfolder.email,
-      folderName: existfolder.folderName,
-      folderModel: List<SubFolderModel>.from(existfolder.folderModel)
-        ..add(
-          SubFolderModel(
-            path: pickedPdf.file.path,
-            name: 'pdf',
-            pdfname: pickedPdf.fileName,
-          ),
-        ),
+    List<SubFolderModel> listpath = [];
+    listpath.add(
+      SubFolderModel(path: pdfurl, name: 'pdf', pdfname: pickedPdf.fileName),
     );
-    await updateFolderInHive(foldermodel, key);
-    final futureBuilderState = futurebuilderkey.currentState;
-    if (futureBuilderState != null) {
-      futureBuilderState.refresh();
+    if (existfolder != null) {
+      int key = getKeyOfFoldermodel(existfolder);
+      final foldermodel = FolderModel(
+        createtime: existfolder.createtime,
+        updatetime: DateTime.now(),
+        email: existfolder.email,
+        folderName: existfolder.folderName,
+        folderModel: List<SubFolderModel>.from(existfolder.folderModel)
+          ..add(
+            SubFolderModel(
+              path: pdfurl,
+              name: 'pdf',
+              pdfname: pickedPdf.fileName,
+            ),
+          ),
+      );
+      await updateFolderInHive(foldermodel, key);
+      isloadingvaluenotifier.value = false;
+      final futureBuilderState = futurebuilderkey.currentState;
+      if (futureBuilderState != null) {
+        futureBuilderState.refresh();
+      }
+      newshowSnackbar(context, 'Successfully upload PDF',
+          'Successfully upload the PDF', ContentType.success);
     }
-    newshowSnackbar(context, 'Successfully upload PDF',
-        'Successfully upload the PDF', ContentType.success);
   }
 }
 
@@ -1171,10 +1218,22 @@ Future<void> imagePdf(BuildContext context, SubFolderModel subFolderModel,
   );
 }
 
-void imagePdfShareFn(String path) async {
-  final filePath = path;
-  OpenFile.open(filePath);
-  Share.shareFiles([filePath], text: 'image');
+void imagePdfShareFn(SubFolderModel subFolderModel) async {
+  Dio dio = Dio();
+  Directory tempDir = await getTemporaryDirectory();
+  String tempFilePath = '${tempDir.path}/${subFolderModel.pdfname}.pdf';
+  await dio.download(subFolderModel.path, tempFilePath);
+  await OpenFile.open(tempFilePath);
+  Share.shareFiles([tempFilePath], text: 'image');
+}
+
+void imagePdfFavShareFn(FavoritesModel subFolderModel) async {
+  Dio dio = Dio();
+  Directory tempDir = await getTemporaryDirectory();
+  String tempFilePath = '${tempDir.path}/${subFolderModel.pdfname}.pdf';
+  await dio.download(subFolderModel.path, tempFilePath);
+  await OpenFile.open(tempFilePath);
+  Share.shareFiles([tempFilePath], text: 'image');
 }
 
 void shareFolderFn(List<String> paths, BuildContext context) async {
@@ -1215,7 +1274,7 @@ void __showSnackBar(BuildContext context, String message) {
   );
 }
 
-void showSelectedImageDialog(BuildContext context, File imageFile) {
+void showSelectedImageDialog(BuildContext context, String imageFile) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -1223,9 +1282,44 @@ void showSelectedImageDialog(BuildContext context, File imageFile) {
         child: SizedBox(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
-          child: Image.file(imageFile),
+          child: Image.network(imageFile),
         ),
       );
     },
   );
+}
+
+Future<String?> uploadImageAndStoreURL(
+    File imageFile, BuildContext context) async {
+  try {
+    User? user = FirebaseAuth.instance.currentUser;
+    Reference storageReference = FirebaseStorage.instance.ref().child(
+        'images/${user!.email}/${DateTime.now().millisecondsSinceEpoch}');
+    UploadTask uploadTask = storageReference.putFile(imageFile);
+    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() => null);
+    String imageUrl = await taskSnapshot.ref.getDownloadURL();
+    return imageUrl;
+  } catch (e) {
+    newshowSnackbar(
+        context, 'Error uploading image: ', '$e', ContentType.failure);
+  }
+  return null;
+}
+
+Future<String?> uploadPDFAndStoreURL(
+    PickedPdf pdfFile, BuildContext context) async {
+  try {
+    User? user = FirebaseAuth.instance.currentUser;
+    Reference storageReference = FirebaseStorage.instance.ref().child(
+        'pdfs/${user!.email}/${DateTime.now().millisecondsSinceEpoch}.${pdfFile.fileName}');
+
+    UploadTask uploadTask = storageReference.putFile(pdfFile.file);
+    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() => null);
+    String pdfUrl = await taskSnapshot.ref.getDownloadURL();
+    return pdfUrl;
+  } catch (e) {
+    newshowSnackbar(
+        context, 'Error uploading PDF: ', '$e', ContentType.failure);
+  }
+  return null;
 }

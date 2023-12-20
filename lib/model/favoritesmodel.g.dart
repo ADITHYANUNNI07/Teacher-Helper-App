@@ -19,7 +19,7 @@ class FavoritesModelAdapter extends TypeAdapter<FavoritesModel> {
     return FavoritesModel(
       email: fields[1] as String,
       path: fields[0] as String,
-      pdfname: fields[3] as String?,
+      pdfname: fields[3] as String,
       type: fields[2] as String,
       foldername: fields[4] as String,
     );

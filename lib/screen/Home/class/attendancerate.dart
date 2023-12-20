@@ -1,4 +1,4 @@
-// ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member, deprecated_member_use
+// ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member, deprecated_member_use, unused_catch_clause
 
 import 'package:eduvista/db/hive.dart';
 import 'package:eduvista/model/studentattendancemodel.dart';
@@ -119,9 +119,7 @@ class _AttendanceRateState extends State<AttendanceRate> {
                                             100)
                                         .toInt();
                                   } else {
-                                    // Handle the case where totalday is zero (e.g., set attendancerate to a default value)
-                                    attendancerate =
-                                        0; // Or any other default value you want
+                                    attendancerate = 0;
                                   }
                                   return Container(
                                     width: size.width,
@@ -200,44 +198,46 @@ class _AttendanceRateState extends State<AttendanceRate> {
 
 Future<void> generatePDF(
     List<Map<String, dynamic>> studentData, String className) async {
-  final pdf = pw.Document();
+  try {
+    final pdf = pw.Document();
 
-  // Add a page to the PDF
-  pdf.addPage(
-    pw.Page(
-      build: (context) {
-        return pw.Column(
-          children: [
-            // Add header with class name
-            pw.Header(
-              level: 0,
-              child: pw.Text('Attendance Report - $className'),
-            ),
-            // Add student attendance data
-            pw.Table.fromTextArray(
-              headers: ['Student Name', 'Attendance Rate'],
-              data: List<List<String>>.generate(
-                studentData.length,
-                (index) => [
-                  studentData[index]['name'],
-                  calculateAttendanceRate(
-                    studentData[index]['totalpresent'],
-                    studentData[index]['totalday'],
-                  ),
-                ],
+    // Add a page to the PDF
+    pdf.addPage(
+      pw.Page(
+        build: (context) {
+          return pw.Column(
+            children: [
+              // Add header with class name
+              pw.Header(
+                level: 0,
+                child: pw.Text('Attendance Report - $className'),
               ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-  final directory = await getApplicationDocumentsDirectory();
-  final filePath = '${directory.path}/attendance_report.pdf';
-  final file = File(filePath);
-  await file.writeAsBytes(await pdf.save());
-  OpenFile.open(filePath);
-  Share.shareFiles([filePath], text: 'Attendance Report - $className');
+              // Add student attendance data
+              pw.Table.fromTextArray(
+                headers: ['Student Name', 'Attendance Rate'],
+                data: List<List<String>>.generate(
+                  studentData.length,
+                  (index) => [
+                    studentData[index]['name'],
+                    calculateAttendanceRate(
+                      studentData[index]['totalpresent'],
+                      studentData[index]['totalday'],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = '${directory.path}/attendance_report.pdf';
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+    OpenFile.open(filePath);
+    Share.shareFiles([filePath], text: 'Attendance Report - $className');
+  } on Exception catch (e) {}
 }
 
 String calculateAttendanceRate(int totalPresent, int totalDay) {

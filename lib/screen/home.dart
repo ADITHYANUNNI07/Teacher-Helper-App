@@ -21,6 +21,12 @@ class HomeScrn extends StatefulWidget {
 
 class _HomeScrnState extends State<HomeScrn> {
   @override
+  void initState() {
+    getUserdetails(widget.userDetails!.email);
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
     int currentHour = now.hour;

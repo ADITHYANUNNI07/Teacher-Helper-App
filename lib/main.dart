@@ -11,13 +11,17 @@ void main() async {
 
   if (kIsWeb) {
     // Web platform
+
+// Initialize Firebase
     await Firebase.initializeApp(
-      options: FirebaseOptions(
-        apiKey: WebConstants.apiKey,
-        appId: WebConstants.appId,
-        messagingSenderId: WebConstants.messagingSenderId,
-        projectId: WebConstants.projectId,
-      ),
+      options: const FirebaseOptions(
+          apiKey: "AIzaSyAdl04or6jHIl-IEbWyUDTrIrvhqpHwwek",
+          authDomain: "eduvista-c2a06.firebaseapp.com",
+          projectId: "eduvista-c2a06",
+          storageBucket: "eduvista-c2a06.appspot.com",
+          messagingSenderId: "89300574377",
+          appId: "1:89300574377:web:96b6c62245175e0e5c89b8",
+          measurementId: "G-2L89MJLBP2"),
     );
   } else {
     // Android or iOS platform

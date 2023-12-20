@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 
 import 'package:eduvista/Service/auth_service.dart';
@@ -12,7 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 class ProfileScrn extends StatelessWidget {
   const ProfileScrn({super.key, this.userDetails});
@@ -107,7 +108,7 @@ class ProfileScrn extends StatelessWidget {
                           trailingIcon: LineAwesomeIcons.angle_right),
                       AccountListTileWidget(
                         onTap: () {
-                          launchPlayStore();
+                          launchAppStore();
                         },
                         title: 'Share Application',
                         leadingIcon: Icons.share,
@@ -233,14 +234,13 @@ void deleteaccount(BuildContext context, UserDetails user) {
   );
 }
 
-Future<void> launchPlayStore() async {
-  const String packageName =
-      'com.whatsapp'; // Replace with your app's package name
-  String url = 'market://details?id=$packageName';
+Future<void> launchAppStore() async {
+  const String packageName = 'com.example.eduvista';
+  String url = 'amzn://apps/android?p=$packageName';
 
-  if (await canLaunchUrlString(url)) {
-    await launchUrlString(url);
+  if (await canLaunch(url)) {
+    await launch(url);
   } else {
-    print('Could not launch Play Store');
+    print('Could not launch Amazon Appstore');
   }
 }

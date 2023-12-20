@@ -254,4 +254,10 @@ class _SignupScrnState extends State<SignupScrn> {
       }
     }
   }
+
+  @override
+  void dispose() {
+    _isLoding = false;
+    super.dispose();
+  }
 }

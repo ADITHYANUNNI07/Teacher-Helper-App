@@ -3,7 +3,6 @@
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:eduvista/db/hive.dart';
 import 'package:eduvista/model/classmodel.dart';
-import 'package:eduvista/model/studentmodel.dart';
 import 'package:eduvista/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

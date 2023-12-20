@@ -65,7 +65,7 @@ class SubFolderModelAdapter extends TypeAdapter<SubFolderModel> {
     return SubFolderModel(
       path: fields[0] as String,
       name: fields[1] as String,
-      pdfname: fields[2] as String?,
+      pdfname: fields[2] as String,
     );
   }
 

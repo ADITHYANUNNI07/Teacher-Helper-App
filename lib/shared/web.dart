@@ -1,6 +1,6 @@
 class WebConstants {
-  static String appId = "1:1088392150077:web:cfc7288df6727eacff7e54";
-  static String apiKey = "AIzaSyB0NaNAyJuappHs1X_VHtc7aGZo2_5mOVE";
-  static String messagingSenderId = "1088392150077";
-  static String projectId = "edu-vista";
+  static String appId = "1:89300574377:web:96b6c62245175e0e5c89b8";
+  static String apiKey = "AIzaSyAdl04or6jHIl-IEbWyUDTrIrvhqpHwwek";
+  static String messagingSenderId = "89300574377";
+  static String projectId = "eduvista-c2a06";
 }
