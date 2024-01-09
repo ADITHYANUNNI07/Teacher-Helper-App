@@ -1,9 +1,8 @@
-// ignore_for_file: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
-
 import 'package:eduvista/db/hive.dart';
 import 'package:eduvista/model/usermodel.dart';
 import 'package:eduvista/screen/favorites.dart';
 import 'package:eduvista/screen/home.dart';
+import 'package:eduvista/screen/notification.dart';
 import 'package:eduvista/screen/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,7 @@ class _DashBoardScrnState extends State<DashBoardScrn> {
   @override
   void initState() {
     super.initState();
-    getUserdetails(widget.userDetails!.email);
+
     pages = [
       HomeScrn(userDetails: widget.userDetails),
       FavoritesScrn(user: widget.userDetails),
@@ -79,5 +78,6 @@ ValueNotifier<UserDetails?> userdetailsvlauenotifiermain = ValueNotifier(
     UserDetails(name: '', email: '', password: '', phonenumber: ''));
 Future<void> getUserdetails(String email) async {
   userdetailsvlauenotifiermain.value = await getUserDetailsByEmail(email);
+  print(userdetailsvlauenotifiermain.value!.name);
   userdetailsvlauenotifiermain.notifyListeners();
 }

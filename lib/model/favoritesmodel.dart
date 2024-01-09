@@ -10,13 +10,13 @@ class FavoritesModel {
   @HiveField(2)
   String type;
   @HiveField(3)
-  String pdfname;
+  String? pdfname;
   @HiveField(4)
   String foldername;
   FavoritesModel(
       {required this.email,
       required this.path,
-      required this.pdfname,
+      this.pdfname,
       required this.type,
       required this.foldername});
 }

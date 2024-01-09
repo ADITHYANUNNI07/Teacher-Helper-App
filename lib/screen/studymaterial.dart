@@ -1,7 +1,4 @@
 // ignore_for_file: use_build_context_synchronously, implementation_imports, unnecessary_null_comparison, invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
-import 'package:eduvista/screen/Home/attendance.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart';
 import 'dart:io';
 import 'package:eduvista/db/hive.dart';
@@ -19,8 +16,6 @@ import 'package:lottie/lottie.dart';
 import 'package:awesome_snackbar_content/src/content_type.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share/share.dart';
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
 
 class StudyMaterialScrn extends StatefulWidget {
   const StudyMaterialScrn(
@@ -31,7 +26,6 @@ class StudyMaterialScrn extends StatefulWidget {
   State<StudyMaterialScrn> createState() => _StudyMaterialScrnState();
 }
 
-final ValueNotifier<bool> isloadingvaluenotifier = ValueNotifier<bool>(false);
 ValueNotifier<List<FavoritesModel>> favoritelistvaluenotifier =
     ValueNotifier<List<FavoritesModel>>([]);
 
@@ -105,27 +99,18 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
             centerTitle: true,
             elevation: 0,
           ),
-          body: ValueListenableBuilder(
-              valueListenable: isloadingvaluenotifier,
-              builder: (context, isloading, child) {
-                return isloading
-                    ? const Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    : Container(
-                        width: size.width,
-                        padding: const EdgeInsets.only(
-                            left: 10, right: 10, bottom: 5),
-                        child: Column(
-                          children: [
-                            FutureBuilderclass(
-                              key: futurebuilderkey,
-                              email: widget.email,
-                              foldername: widget.foldername,
-                            ),
-                          ],
-                        ));
-              }),
+          body: Container(
+              width: size.width,
+              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 5),
+              child: Column(
+                children: [
+                  FutureBuilderclass(
+                    key: futurebuilderkey,
+                    email: widget.email,
+                    foldername: widget.foldername,
+                  ),
+                ],
+              )),
           floatingActionButton: SpeedDial(
             animatedIcon: AnimatedIcons.add_event,
             animatedIconTheme: const IconThemeData(size: 22.0),
@@ -172,7 +157,6 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
                                         setState(() {
                                           image = imagemap['file'];
                                         });
-                                        Navigator.pop(context);
                                         imageupload(
                                             image,
                                             context,
@@ -194,7 +178,6 @@ class _StudyMaterialScrnState extends State<StudyMaterialScrn> {
                                         setState(() {
                                           image = imagemap['file'];
                                         });
-                                        Navigator.pop(context);
                                         imageupload(
                                             image,
                                             context,
@@ -417,8 +400,8 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                           isfavorite = false;
                         }
                         if (subFolderModel.name == 'image') {
-                          String imageFile = subFolderModel.path;
-                          if (imageFile.isNotEmpty) {
+                          File imageFile = File(subFolderModel.path);
+                          if (imageFile.existsSync()) {
                             return InkWell(
                                 onTap: () {
                                   showSelectedImageDialog(context, imageFile);
@@ -436,7 +419,7 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                         spacing: 10,
                                         borderRadius: BorderRadius.circular(9),
                                         onPressed: (context) async {
-                                          imagePdfShareFn(subFolderModel);
+                                          imagePdfShareFn(subFolderModel.path);
                                         },
                                       ),
                                       const SizedBox(width: 5),
@@ -469,33 +452,10 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                       aspectRatio: 10 / 5,
                                       child: Row(
                                         children: [
-                                          FutureBuilder<String>(
-                                            future: getImageUrl(imageFile),
-                                            builder: (context, snapshot) {
-                                              if (snapshot.connectionState ==
-                                                  ConnectionState.waiting) {
-                                                return CircleAvatar(
-                                                  radius: 55,
-                                                  backgroundColor: Colors.white,
-                                                  child: LottieBuilder.asset(
-                                                      'assets/animation/Animation-1703042156574.json'),
-                                                );
-                                              } else if (snapshot.hasError) {
-                                                return CircleAvatar(
-                                                  radius: 55,
-                                                  backgroundColor: Colors.white,
-                                                  child: LottieBuilder.asset(
-                                                      'assets/animation/animation_lo4efsbq.json'),
-                                                );
-                                              } else {
-                                                return CircleAvatar(
-                                                  radius: 55,
-                                                  backgroundColor: Colors.white,
-                                                  backgroundImage:
-                                                      NetworkImage(imageFile),
-                                                );
-                                              }
-                                            },
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(16.0),
+                                            child: Image.file(imageFile),
                                           ),
                                           Expanded(
                                             child: Padding(
@@ -509,7 +469,7 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    subFolderModel.pdfname,
+                                                    subFolderModel.pdfname!,
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                     style: GoogleFonts.poppins(
@@ -536,19 +496,14 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                                       } else {
                                                         final favoritesModel =
                                                             FavoritesModel(
-                                                                foldername: widget
-                                                                    .foldername,
-                                                                email: widget
-                                                                    .email,
-                                                                path:
-                                                                    subFolderModel
-                                                                        .path,
-                                                                type:
-                                                                    subFolderModel
-                                                                        .name,
-                                                                pdfname:
-                                                                    subFolderModel
-                                                                        .pdfname);
+                                                          foldername:
+                                                              widget.foldername,
+                                                          email: widget.email,
+                                                          path: subFolderModel
+                                                              .path,
+                                                          type: subFolderModel
+                                                              .name,
+                                                        );
 
                                                         await addFavoritetoHive(
                                                             favoritesModel);
@@ -582,17 +537,8 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                             },
                             onTap: () async {
                               try {
-                                Dio dio = Dio();
-                                Directory tempDir =
-                                    await getTemporaryDirectory();
-                                String tempFilePath =
-                                    '${tempDir.path}/${subFolderModel.pdfname}.pdf';
-                                await dio.download(
-                                    subFolderModel.path, tempFilePath);
-                                await OpenFile.open(tempFilePath);
-                              } catch (e) {
-                                print('Error opening PDF: $e');
-                              }
+                                await OpenFile.open(subFolderModel.path);
+                              } catch (e) {}
                             },
                             child: Slidable(
                               endActionPane: ActionPane(
@@ -607,7 +553,7 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                     spacing: 10,
                                     borderRadius: BorderRadius.circular(9),
                                     onPressed: (context) async {
-                                      imagePdfShareFn(subFolderModel);
+                                      imagePdfShareFn(subFolderModel.path);
                                     },
                                   ),
                                   const SizedBox(width: 5),
@@ -626,7 +572,7 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      subFolderModel.pdfname,
+                                      subFolderModel.pdfname!,
                                       style: GoogleFonts.poppins(
                                           color: Colors.white),
                                     ),
@@ -795,7 +741,6 @@ class FutureBuilderclassState extends State<FutureBuilderclass> {
                                           await deleteFavoritesFromHive(key);
                                         } else {
                                           final favoritesModel = FavoritesModel(
-                                              pdfname: subFolderModel.pdfname,
                                               foldername: widget.foldername,
                                               email: widget.email,
                                               path: subFolderModel.path,
@@ -982,7 +927,7 @@ void createFolder(
       }
       Navigator.pop(context);
       newshowSnackbar(context, 'Successfully create Folder',
-          'Successfully create Folder $newfoldername', ContentType.success);
+          'Successfully create Folder $foldername', ContentType.success);
     } else {}
   } else {
     newshowSnackbar(context, 'Folder name Already existing',
@@ -1006,12 +951,9 @@ void imageupload(
     }
   }
   if (image != null) {
-    isloadingvaluenotifier.value = true;
     List<SubFolderModel> listpath = [];
-    final imageurl = await uploadImageAndStoreURL(image, context);
-    listpath.add(SubFolderModel(
-        path: imageurl ?? '', name: 'image', pdfname: imagename));
-
+    listpath.add(
+        SubFolderModel(path: image.path, name: 'image', pdfname: imagename));
     if (existfolder != null) {
       int key = getKeyOfFoldermodel(existfolder);
       final foldermodel = FolderModel(
@@ -1021,13 +963,13 @@ void imageupload(
           folderName: existfolder.folderName,
           folderModel: List<SubFolderModel>.from(existfolder.folderModel)
             ..add(SubFolderModel(
-                path: imageurl ?? '', name: 'image', pdfname: imagename)));
+                path: image.path, name: 'image', pdfname: imagename)));
       await updateFolderInHive(foldermodel, key);
       final futureBuilderState = futurebuilderkey.currentState;
       if (futureBuilderState != null) {
         futureBuilderState.refresh();
       }
-      isloadingvaluenotifier.value = false;
+      Navigator.pop(context);
       newshowSnackbar(context, 'Successfully upload Image',
           'Successfully upload the image', ContentType.success);
     }
@@ -1040,44 +982,40 @@ void imageupload(
 void pdfUpload(PickedPdf pickedPdf, BuildContext context, String foldername,
     GlobalKey<FutureBuilderclassState> futurebuilderkey, String email) async {
   FolderModel? existfolder;
-  isloadingvaluenotifier.value = true;
-  String? pdfurl = await uploadPDFAndStoreURL(pickedPdf, context);
-  if (pdfurl != null) {
-    List<FolderModel> allFolder = await getFolderFromHive(email);
-    for (var folder in allFolder) {
-      if (folder.folderName == foldername) {
-        existfolder = folder;
-      }
+  List<FolderModel> allFolder = await getFolderFromHive(email);
+  for (var folder in allFolder) {
+    if (folder.folderName == foldername) {
+      existfolder = folder;
     }
-    List<SubFolderModel> listpath = [];
-    listpath.add(
-      SubFolderModel(path: pdfurl, name: 'pdf', pdfname: pickedPdf.fileName),
-    );
-    if (existfolder != null) {
-      int key = getKeyOfFoldermodel(existfolder);
-      final foldermodel = FolderModel(
-        createtime: existfolder.createtime,
-        updatetime: DateTime.now(),
-        email: existfolder.email,
-        folderName: existfolder.folderName,
-        folderModel: List<SubFolderModel>.from(existfolder.folderModel)
-          ..add(
-            SubFolderModel(
-              path: pdfurl,
-              name: 'pdf',
-              pdfname: pickedPdf.fileName,
-            ),
+  }
+  List<SubFolderModel> listpath = [];
+  listpath.add(
+    SubFolderModel(
+        path: pickedPdf.file.path, name: 'pdf', pdfname: pickedPdf.fileName),
+  );
+  if (existfolder != null) {
+    int key = getKeyOfFoldermodel(existfolder);
+    final foldermodel = FolderModel(
+      createtime: existfolder.createtime,
+      updatetime: DateTime.now(),
+      email: existfolder.email,
+      folderName: existfolder.folderName,
+      folderModel: List<SubFolderModel>.from(existfolder.folderModel)
+        ..add(
+          SubFolderModel(
+            path: pickedPdf.file.path,
+            name: 'pdf',
+            pdfname: pickedPdf.fileName,
           ),
-      );
-      await updateFolderInHive(foldermodel, key);
-      isloadingvaluenotifier.value = false;
-      final futureBuilderState = futurebuilderkey.currentState;
-      if (futureBuilderState != null) {
-        futureBuilderState.refresh();
-      }
-      newshowSnackbar(context, 'Successfully upload PDF',
-          'Successfully upload the PDF', ContentType.success);
+        ),
+    );
+    await updateFolderInHive(foldermodel, key);
+    final futureBuilderState = futurebuilderkey.currentState;
+    if (futureBuilderState != null) {
+      futureBuilderState.refresh();
     }
+    newshowSnackbar(context, 'Successfully upload PDF',
+        'Successfully upload the PDF', ContentType.success);
   }
 }
 
@@ -1218,22 +1156,10 @@ Future<void> imagePdf(BuildContext context, SubFolderModel subFolderModel,
   );
 }
 
-void imagePdfShareFn(SubFolderModel subFolderModel) async {
-  Dio dio = Dio();
-  Directory tempDir = await getTemporaryDirectory();
-  String tempFilePath = '${tempDir.path}/${subFolderModel.pdfname}.pdf';
-  await dio.download(subFolderModel.path, tempFilePath);
-  await OpenFile.open(tempFilePath);
-  Share.shareFiles([tempFilePath], text: 'image');
-}
-
-void imagePdfFavShareFn(FavoritesModel subFolderModel) async {
-  Dio dio = Dio();
-  Directory tempDir = await getTemporaryDirectory();
-  String tempFilePath = '${tempDir.path}/${subFolderModel.pdfname}.pdf';
-  await dio.download(subFolderModel.path, tempFilePath);
-  await OpenFile.open(tempFilePath);
-  Share.shareFiles([tempFilePath], text: 'image');
+void imagePdfShareFn(String path) async {
+  final filePath = path;
+  OpenFile.open(filePath);
+  Share.shareFiles([filePath], text: 'image');
 }
 
 void shareFolderFn(List<String> paths, BuildContext context) async {
@@ -1274,7 +1200,7 @@ void __showSnackBar(BuildContext context, String message) {
   );
 }
 
-void showSelectedImageDialog(BuildContext context, String imageFile) {
+void showSelectedImageDialog(BuildContext context, File imageFile) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -1282,44 +1208,9 @@ void showSelectedImageDialog(BuildContext context, String imageFile) {
         child: SizedBox(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
-          child: Image.network(imageFile),
+          child: Image.file(imageFile),
         ),
       );
     },
   );
-}
-
-Future<String?> uploadImageAndStoreURL(
-    File imageFile, BuildContext context) async {
-  try {
-    User? user = FirebaseAuth.instance.currentUser;
-    Reference storageReference = FirebaseStorage.instance.ref().child(
-        'images/${user!.email}/${DateTime.now().millisecondsSinceEpoch}');
-    UploadTask uploadTask = storageReference.putFile(imageFile);
-    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() => null);
-    String imageUrl = await taskSnapshot.ref.getDownloadURL();
-    return imageUrl;
-  } catch (e) {
-    newshowSnackbar(
-        context, 'Error uploading image: ', '$e', ContentType.failure);
-  }
-  return null;
-}
-
-Future<String?> uploadPDFAndStoreURL(
-    PickedPdf pdfFile, BuildContext context) async {
-  try {
-    User? user = FirebaseAuth.instance.currentUser;
-    Reference storageReference = FirebaseStorage.instance.ref().child(
-        'pdfs/${user!.email}/${DateTime.now().millisecondsSinceEpoch}.${pdfFile.fileName}');
-
-    UploadTask uploadTask = storageReference.putFile(pdfFile.file);
-    TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() => null);
-    String pdfUrl = await taskSnapshot.ref.getDownloadURL();
-    return pdfUrl;
-  } catch (e) {
-    newshowSnackbar(
-        context, 'Error uploading PDF: ', '$e', ContentType.failure);
-  }
-  return null;
 }

@@ -34,12 +34,14 @@ class _LoginScrnState extends State<LoginScrn> {
         color: const Color(0Xff188F79),
         child: _isLoding
             ? Container(
-                height: 300,
-                width: 300,
+                height: 300, // set the height of the container to 300
+                width: 300, // set the width of the container to 300
                 color: Colors.white,
                 child: FractionallySizedBox(
-                  widthFactor: 0.4,
-                  heightFactor: 0.4,
+                  widthFactor:
+                      0.4, // set the width factor to 0.8 to take 80% of the container's width
+                  heightFactor:
+                      0.4, // set the height factor to 0.8 to take 80% of the container's height
                   child: Lottie.asset(
                     'assets/animation/animation_lo4efsbq.json',
                   ),
@@ -226,11 +228,5 @@ class _LoginScrnState extends State<LoginScrn> {
         });
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _isLoding = false;
-    super.dispose();
   }
 }

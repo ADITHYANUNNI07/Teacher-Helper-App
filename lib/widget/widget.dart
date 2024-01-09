@@ -165,15 +165,14 @@ class AuthContainerLoginSignupWidget extends StatelessWidget {
 void newshowSnackbar(
     BuildContext context, String title, String message, contentType) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    behavior: SnackBarBehavior.floating,
-    content: AwesomeSnackbarContent(
-        inMaterialBanner: true,
-        title: title,
-        message: message,
-        contentType: contentType),
-  ));
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      behavior: SnackBarBehavior.floating,
+      content: AwesomeSnackbarContent(
+          inMaterialBanner: true,
+          title: title,
+          message: message,
+          contentType: contentType)));
 }
 
 class CategoriesWidget extends StatelessWidget {
